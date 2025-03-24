@@ -23,8 +23,8 @@ def load_data():
 data = load_data()
 
 # Sidebar: Add a slider for selecting a specific date and hour
-min_date = data['datetime'].min()
-max_date = data['datetime'].max()
+min_date = data['datetime'].min().to_pydatetime()
+max_date = data['datetime'].max().to_pydatetime()
 selected_time = st.slider(
     "Select Date and Hour",
     min_value=min_date,
@@ -32,6 +32,7 @@ selected_time = st.slider(
     value=min_date,
     format="YYYY-MM-DD HH:00:00"
 )
+
 
 # Filter the data for the selected time
 data_selected = data[data['datetime'] == selected_time]
