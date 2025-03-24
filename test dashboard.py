@@ -16,6 +16,7 @@ def load_data():
     gdf['lat'] = gdf.geometry.y
     gdf['lon'] = gdf.geometry.x
     # Convert the datetime column to a datetime type
+    gdf = gdf.rename(columns = {"Datetime":"datetime"})
     gdf['datetime'] = pd.to_datetime(gdf['datetime'])
     return gdf
 
