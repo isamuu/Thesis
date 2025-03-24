@@ -39,26 +39,27 @@ data_selected = data[data['datetime'] == selected_time]
 
 st.subheader("Tourist Pressure Map")
 
-# Using pydeck for a more interactive map that allows zooming
 if not data_selected.empty:
     view_state = pdk.ViewState(
         latitude=data_selected['lat'].mean(), 
         longitude=data_selected['lon'].mean(),
         zoom=12, pitch=0
     )
-    layer = pdk.Layer(
-        "ScatterplotLayer",
+    heatmap_layer = pdk.Layer(
+        "HeatmapLayer",
         data=data_selected,
-        get_position='[lon, lat]',
-        get_color='[255, 0, 0, 140]',
-        get_radius='pressure',  # This assumes the pressure value can scale the point size
-        pickable=True,
+        get_position="[lon, lat]",
+        get_weight="pressure",  # using pressure as the weight for the heatmap
+        radiusPixels=60         # adjust the radius to fine-tune the effect
     )
-    tooltip = {"html": "Pressure: {pressure}", "style": {"color": "white"}}
-    deck = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip)
+    deck = pdk.Deck(
+        layers=[heatmap_layer],
+        initial_view_state=view_state,
+    )
     st.pydeck_chart(deck)
 else:
     st.write("No data available for the selected time.")
+
 
 st.subheader("Pressure Over Time")
 
