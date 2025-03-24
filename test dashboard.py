@@ -8,7 +8,7 @@ import pydeck as pdk
 @st.cache
 def load_data():
     # Adjust the file path if necessary
-    df = pd.read_csv("test_pressure_time.csv")
+    df = pd.read_csv("test_pressure_time_small.csv")
     # Convert the geometry column from WKT string to a shapely geometry object
     df['geometry'] = df['geometry'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
