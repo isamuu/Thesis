@@ -56,7 +56,9 @@ if st.session_state.playing:
         selected_hour = hour_index
         selected_datetime = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
         st.session_state.play_index = (play_index + 1) % total_hours
-    st.experimental_rerun()  # Immediately re-run the app without sleeping
+    st.experimental_rerun()  # Trigger a rerun of the app
+    st.stop()             # Stop further code execution in the current run
+
 
 
 # Filter data for the selected datetime
