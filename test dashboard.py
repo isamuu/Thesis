@@ -40,30 +40,24 @@ if "playing" not in st.session_state:
 if "play_index" not in st.session_state:
     st.session_state.play_index = 0
 
-# Toggle function for play/pause
 def toggle_play():
     st.session_state.playing = not st.session_state.playing
 
-# Add a play/pause button; clicking this will toggle the play state
 st.button("Play/Pause", on_click=toggle_play)
 
-# If play mode is active, override the selected datetime
+# If play mode is active, update the selected time and immediately trigger a rerun
 if st.session_state.playing:
-    # Total number of hours across the days
     total_hours = len(unique_days) * 24
     play_index = st.session_state.play_index
-    # Determine the day and hour based on the current play index
     day_index = play_index // 24
     hour_index = play_index % 24
-    # Ensure the day index is within bounds
     if day_index < len(unique_days):
         selected_day = unique_days[day_index]
         selected_hour = hour_index
         selected_datetime = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
         st.session_state.play_index = (play_index + 1) % total_hours
-    # Pause briefly to see the transition, then rerun the app
-    time.sleep(0.5)
-    st.experimental_rerun()
+    st.experimental_rerun()  # Immediately re-run the app without sleeping
+
 
 # Filter data for the selected datetime
 data_selected = data[data['datetime'] == selected_datetime]
