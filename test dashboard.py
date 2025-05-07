@@ -40,24 +40,6 @@ if "playing" not in st.session_state:
 if "play_index" not in st.session_state:
     st.session_state.play_index = 0
 
-def toggle_play():
-    st.session_state.playing = not st.session_state.playing
-
-st.button("Play/Pause", on_click=toggle_play)
-
-# If play mode is active, update the selected time and immediately trigger a rerun
-if st.session_state.playing:
-    total_hours = len(unique_days) * 24
-    play_index = st.session_state.play_index
-    day_index = play_index // 24
-    hour_index = play_index % 24
-    if day_index < len(unique_days):
-        selected_day = unique_days[day_index]
-        selected_hour = hour_index
-        selected_datetime = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
-        st.session_state.play_index = (play_index + 1) % total_hours
-    st.experimental_rerun()  # Trigger a rerun of the app
-    st.stop()             # Stop further code execution in the current run
 
 
 
