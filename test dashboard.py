@@ -7,7 +7,7 @@ import datetime
 import time
 
 # Load and prepare your data
-@st.cache
+@st.cache_data
 def load_data():
     df = pd.read_csv("test_pressure_time_small.csv")
     df.columns = df.columns.str.strip()  # Clean any extra whitespace in column names
