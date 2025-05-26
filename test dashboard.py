@@ -140,13 +140,13 @@ def page_about():
 # ——— Navigation ———
 pages = {
     "Home": page_home,
-    "Overtourism": page_overtourism,
-    "Tourism Dynamics": page_tourism_dynamics,
-    "Carrying Capacity": page_carrying_capacity,
+    "Analysis: Overtourism": page_overtourism,
+    "Analysis: Tourism Dynamics": page_tourism_dynamics,
+    "Analysis: Carrying Capacity": page_carrying_capacity,
     "Finding a DeTour": page_finding_detour,
     "Strategising a DeTour": page_strategising_detour,
     "About / Contact": page_about
 }
 
-selection = st.sidebar.radio("Navigate to", list(pages.keys()))
+selection = st.sidebar.selectbox("Navigate to", list(pages.keys()))
 pages[selection]()
