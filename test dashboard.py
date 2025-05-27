@@ -156,14 +156,14 @@ def page_overtourism():
     # Right: Tourism Nuisance continuous map (white → dark red, semi-transparent)
     with col2:
         st.subheader("Tourism Nuisance")
-        # Base map
+        # 1) Base map
         m2 = folium.Map(
             location=[52.37, 4.90],
             zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
             tiles="CartoDB positron"
         )
 
-        # Single GeoJson layer styled by our continuous cmap
+        # 2) Continuous GeoJson layer styled by our colormap
         folium.GeoJson(
             data=nuis_gdf.__geo_interface__,
             style_function=lambda feat: {
@@ -179,11 +179,16 @@ def page_overtourism():
             )
         ).add_to(m2)
 
-        # Add the continuous color legend
+        # 3) Add the continuous legend
         cmap.add_to(m2)
 
-        # Render full-width, no scrollbar
-        st_html(m2._repr_html_(), width=None, height=600, scrolling=False)
+        # 4) Embed full-width, no scrollbar
+        st_html(
+            m2._repr_html_(),
+            width=None,
+            height=600,
+            scrolling=False
+        )
 
     # — Moments Graphs ——
     st.subheader("Moments")
