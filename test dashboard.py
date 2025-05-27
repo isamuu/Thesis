@@ -7,6 +7,7 @@ import datetime
 import altair as alt
 import folium
 from streamlit_folium import st_folium
+from folium import IFrame
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
@@ -118,28 +119,30 @@ def page_overtourism():
     
     # Add districts (behind)
     for _, r in dist_gdf.iterrows():
+        name = r["name"]
+        html = popup_map.get(name, "")
+        iframe = IFrame(html=html, width=270, height=150)
+        popup = folium.Popup(iframe, max_width=300)
+    
         folium.GeoJson(
-            data=r.geometry.__geo_interface__,        # <<-- use r.geometry
+            data=r.geometry.__geo_interface__,
             style_function=style_district,
-            tooltip=folium.Tooltip(r["name"], sticky=True),
-            popup=folium.Popup(
-                popup_map.get(r["name"], ""),
-                max_width=270,
-                parse_html=True
-            )
+            tooltip=folium.Tooltip(name, sticky=True),
+            popup=popup
         ).add_to(m)
     
     # Add neighbourhoods (on top)
     for _, r in neigh_only_gdf.iterrows():
+        name = r["name"]
+        html = popup_map.get(name, "")
+        iframe = IFrame(html=html, width=300, height=180)
+        popup = folium.Popup(iframe, max_width=320)
+    
         folium.GeoJson(
-            data=r.geometry.__geo_interface__,        # <<-- and here too
+            data=r.geometry.__geo_interface__,
             style_function=style_neighbourhood,
-            tooltip=folium.Tooltip(r["name"], sticky=True),
-            popup=folium.Popup(
-                popup_map.get(r["name"], ""),
-                max_width=300,
-                parse_html=True
-            )
+            tooltip=folium.Tooltip(name, sticky=True),
+            popup=popup
         ).add_to(m)
     
     # Render in Streamlit
