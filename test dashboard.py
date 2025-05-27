@@ -139,6 +139,7 @@ def page_overtourism():
 
     else:  # Tourism Nuisance
         nuis_gdf = load_nuisance_data().query("level=='Neighbourhood'")
+        nuis_gdf = nuis_gdf[nuis_gdf["pct_nuisance"].notnull()]
         vmax = nuis_gdf["pct_nuisance"].max()
         cmap = branca.colormap.LinearColormap(
             ["green","yellow","red"], vmin=0, vmax=vmax,
