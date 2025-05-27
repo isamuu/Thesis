@@ -145,12 +145,12 @@ def page_overtourism():
             popup=popup
         ).add_to(m)
     
-    # 4) Render full-width in Streamlit
+    # 4) Render full-width in Streamlit without scrollbars
     st_html(
         m._repr_html_(),
-        width=None,    # let Streamlit stretch it to the container
-        height=500,
-        scrolling=True
+        width=None,       # stretch to fill the column
+        height=600,       # make this tall enough to fit your map
+        scrolling=False   # disable the HTML container’s scrollbars
     )
 
     # — Moments Graphs ——
