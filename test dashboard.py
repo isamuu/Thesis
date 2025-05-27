@@ -127,9 +127,9 @@ def page_overtourism():
 
     col1, col2 = st.columns(2)
 
+    st.subheader("Places")
     # Left: Overtourism Places map
     with col1:
-        st.subheader("Places")
         m1 = folium.Map(
             location=[52.37, 4.90],
             zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
