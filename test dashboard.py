@@ -220,7 +220,7 @@ def page_overtourism():
            )
            .properties(width=600, height=200)
     )
-    st.altair_chart(hour_chart, use_container_width=True)
+    
     
     # prepare days
     days_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
@@ -250,7 +250,15 @@ def page_overtourism():
            )
            .properties(width=600, height=200)
     )
-    st.altair_chart(day_chart, use_container_width=True)
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**By Hour of Day**")
+        st.altair_chart(hour_chart, use_container_width=True)
+    
+    with col2:
+        st.markdown("**By Day of Week**")
+        st.altair_chart(day_chart, use_container_width=True)
 
     # — Impacts Icons ——
     st.subheader("Impacts")
