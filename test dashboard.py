@@ -47,19 +47,17 @@ def page_home():
     **Introduction**  
     This dashboard is the interactive, digital counterpart to the report on overtourism in Amsterdam.  
     It covers:
-    - **Problematisation**: defining overtourism and its local impacts  
-    - **Approach**: media content analysis, spatial‐temporal mapping, morphological & statistical modelling  
+    - ... 
     """)
 
 def page_overtourism():
     st.title("Overtourism")
     st.markdown("""
     **What it’s about**  
-    Identifying current moments, places and impacts of overtourism in Amsterdam.
+    ...
 
     **Analysis performed**  
-    - Media content analysis of municipal documents, platforms, news articles & a 2016 documentary  
-    - Statistical mapping of resident‐reported nuisance, drunkenness, social cohesion & unsafety per neighbourhood  
+    - ... 
 
     *Key findings*  
     - Concentrated in the historic centre, spreading outward  
@@ -279,9 +277,7 @@ def page_tourism_dynamics():
     Exploring spatio‐temporal flows of tourists via a continuous “pressure” metric derived from Google Maps Popular Times and review counts.
 
     **Analysis performed**  
-    - Origin–destination isochrone analysis (5/15/25 min walks)  
-    - Edge‐bundling of movement directions & activity‐combination networks  
-    - Heatmaps of tourist pressure in space and time  
+    - ...  
     """)
     st.subheader("Tourist Pressure Map")
     # — Filters —
@@ -340,30 +336,21 @@ def page_finding_detour():
     Selecting & delineating a “DeTour” corridor through under‐utilised districts to redistribute flows.
 
     **Analysis performed**  
-    - Overlay of low‐pressure zones near hotel clusters with high‐capacity network & spatial indices  
-    - Definition of three cores (Sloterdijk, Zuidas, Bijlmer ArenA) + inter‐core zones  
-    - Uses Metro line 50 as backbone  
+    - ... 
     """)
 
 def page_strategising_detour():
     st.title("Strategising a DeTour")
     st.markdown("""
     **What it’s about**  
-    High‐level strategy to implement the DeTour, aligned with Amsterdam’s polycentric vision.
-
-    **Content**  
-    - Stakeholder coordination & phased roll‐out  
-    - Policy measures & incentive design  
-    - Monitoring & evaluation framework  
+    ...
     """)
 
 def page_about():
     st.title("About / Contact")
     st.markdown("""
-    **Your Name**  
-    MSc Urban Planning & Design student at XYZ University  
-    Email: your.email@example.com  
-    LinkedIn: linkedin.com/in/yourprofile  
+    **Isamu Goiati**  
+    MSc Urban Planning & Design student at TU Delft  
     """)
 
 # ——— Navigation ———
