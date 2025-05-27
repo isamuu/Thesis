@@ -71,42 +71,53 @@ def page_overtourism():
 
     # — Places Map ——
     st.subheader("Places")
-    st.markdown("Hover or click a polygon to see the sentences that mention it.")
     # 1) Layer selector
-    choice = st.selectbox(
-        "Choose map layer",
-        ["Overtourism Places", "Tourism Nuisance"]
-    )
+    choice = st.selectbox("Choose map layer", ["Overtourism Places", "Tourism Nuisance"])
 
-    # 2) Style functions (must be inside the page function, but outside the if‐blocks)
+    # 2) Load your media‐analysis and geo data
+    media = load_media_data()               # CSV with type, neighbourhood, sentence, source, ...
+    neigh_gdf = load_neighbourhoods()       # GeoJSON with name, geometry, level
+
+    # 3) Build popup_map for places
+    places_df = media[media.type == "place"]
+    popup_map = {}
+    for name, grp in places_df.groupby("neighbourhood"):
+        html = ""
+        for _, row in grp.iterrows():
+            html += (
+                f"<div style='font-size:12px; line-height:1.2; white-space:normal; "
+                f"max-width:250px;'><b>{name}</b> {row.sentence}<br>"
+                f"<i>({row.source})</i></div><hr style='margin:4px 0;'>"
+            )
+        popup_map[name] = html
+
+    # 4) Split neighbourhoods & districts
+    mentioned = places_df.neighbourhood.unique().tolist()
+    dist_gdf = neigh_gdf[
+        (neigh_gdf["name"].isin(mentioned)) &
+        (neigh_gdf["level"] == "District")
+    ]
+    neigh_only_gdf = neigh_gdf[
+        (neigh_gdf["name"].isin(mentioned)) &
+        (neigh_gdf["level"] == "Neighbourhood")
+    ]
+
+    # 5) Style functions
     def style_district(feat):
-        return {
-            "fillColor": "#a1d99b",
-            "color": "black",
-            "weight": 1,
-            "fillOpacity": 0.3
-        }
+        return {"fillColor": "#a1d99b", "color":"black", "weight":1, "fillOpacity":0.3}
 
     def style_neighbourhood(feat):
-        return {
-            "fillColor": "#31a354",
-            "color": "black",
-            "weight": 1,
-            "fillOpacity": 0.5
-        }
+        return {"fillColor": "#31a354", "color":"black", "weight":1, "fillOpacity":0.5}
 
-    # 3) Build the Folium map depending on choice
+    # 6) Build the Folium map according to choice
+    m = folium.Map(
+        location=[52.37, 4.90],
+        zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
+        tiles="CartoDB positron"
+    )
+
     if choice == "Overtourism Places":
-        # load your dist_gdf, neigh_only_gdf and popup_map as before…
-        m = folium.Map(
-            location=[52.37, 4.90],
-            zoom_start=12,
-            min_zoom=11,
-            max_zoom=15,
-            max_bounds=True,
-            tiles="CartoDB positron"
-        )
-        # add districts first
+        # add Districts first
         for _, r in dist_gdf.iterrows():
             iframe = IFrame(html=popup_map[r["name"]], width=270, height=150)
             folium.GeoJson(
@@ -115,7 +126,8 @@ def page_overtourism():
                 tooltip=folium.Tooltip(r["name"], sticky=True),
                 popup=folium.Popup(iframe, max_width=300)
             ).add_to(m)
-        # then neighbourhoods
+
+        # then Neighbourhoods
         for _, r in neigh_only_gdf.iterrows():
             iframe = IFrame(html=popup_map[r["name"]], width=300, height=180)
             folium.GeoJson(
@@ -129,44 +141,36 @@ def page_overtourism():
         nuis_gdf = load_nuisance_data().query("level=='Neighbourhood'")
         vmax = nuis_gdf["pct_nuisance"].max()
         cmap = branca.colormap.LinearColormap(
-            ["green", "yellow", "red"], vmin=0, vmax=vmax,
+            ["green","yellow","red"], vmin=0, vmax=vmax,
             caption="% Residents Experiencing Nuisance"
         )
-        m = folium.Map(
-            location=[52.37, 4.90],
-            zoom_start=12,
-            min_zoom=11,
-            max_zoom=15,
-            max_bounds=True,
-            tiles="CartoDB positron"
-        )
+        # choropleth
         folium.Choropleth(
             geo_data=nuis_gdf.__geo_interface__,
             data=nuis_gdf,
-            columns=["name", "pct_nuisance"],
+            columns=["name","pct_nuisance"],
             key_on="feature.properties.name",
             fill_color="YlOrRd",
             fill_opacity=0.7,
             line_opacity=0.2,
             legend_name="% Nuisance"
         ).add_to(m)
+        # hover tooltips
         folium.GeoJson(
             data=nuis_gdf.__geo_interface__,
             style_function=lambda feat: {
                 "fillColor": cmap(feat["properties"]["pct_nuisance"]),
-                "color": "black",
-                "weight": 1,
-                "fillOpacity": 0.7
+                "color":"black","weight":1,"fillOpacity":0.7
             },
             tooltip=folium.GeoJsonTooltip(
-                fields=["name", "pct_nuisance", "jaar"],
-                aliases=["Neighbourhood", "% Nuisance", "Year"],
+                fields=["name","pct_nuisance","jaar"],
+                aliases=["Neighbourhood","% Nuisance","Year"],
                 localize=True
             )
         ).add_to(m)
         cmap.add_to(m)
 
-    # 4) Finally, embed full‐width without scrollbars
+    # 7) Finally embed full‐width, no scrollbar
     st_html(
         m._repr_html_(),
         width=None,
