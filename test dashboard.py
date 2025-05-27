@@ -179,8 +179,6 @@ def page_overtourism():
             )
         ).add_to(m2)
 
-        # 3) Add the continuous legend
-        cmap.add_to(m2)
 
         # 4) Embed full-width, no scrollbar
         st_html(
