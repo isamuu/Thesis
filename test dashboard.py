@@ -91,7 +91,7 @@ def page_overtourism():
     st.subheader("Moments")
     st.markdown("Bars in **blue** are hours/days mentioned in the texts. Hover to read the sentences.")
     moments = media[media.type == "moment"]
-
+    
     # prepare hours
     hrs = (moments.groupby("hour")
                    .sentence
@@ -100,31 +100,55 @@ def page_overtourism():
     hrs["count"] = hrs.sentences.str.count("<br>") + 1
     full_hrs = pd.DataFrame({"hour": list(range(24))})
     hrs = full_hrs.merge(hrs, on="hour", how="left").fillna({"sentences":"", "count":0})
-
-    hour_chart = alt.Chart(hrs).mark_bar().encode(
-        x=alt.X("hour:O", title="Hour of Day"),
-        y=alt.Y("count:Q", title="Mentions"),
-        color=alt.condition(alt.datum.count>0, alt.value("steelblue"), alt.value("lightgray")),
-        tooltip=[alt.Tooltip("hour:O","Hour"), alt.Tooltip("sentences:N","Sentences")]
-    ).properties(width=600, height=200)
+    
+    hour_chart = (
+        alt.Chart(hrs)
+           .mark_bar()
+           .encode(
+             x=alt.X("hour:O", title="Hour of Day"),
+             y=alt.Y("count:Q", title="Mentions"),
+             color=alt.condition(
+               alt.datum.count > 0,
+               alt.value("steelblue"),
+               alt.value("lightgray")
+             ),
+             tooltip=[
+               alt.Tooltip("hour:O", title="Hour"),
+               alt.Tooltip("sentences:N", title="Sentences")
+             ]
+           )
+           .properties(width=600, height=200)
+    )
     st.altair_chart(hour_chart, use_container_width=True)
-
+    
     # prepare days
     days_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
     dys = (moments.groupby("day")
-                  .sentence
-                  .apply(lambda s: "<br>".join(s))
-                  .reset_index(name="sentences"))
+                   .sentence
+                   .apply(lambda s: "<br>".join(s))
+                   .reset_index(name="sentences"))
     dys["count"] = dys.sentences.str.count("<br>") + 1
     full_days = pd.DataFrame({"day": days_order})
     dys = full_days.merge(dys, on="day", how="left").fillna({"sentences":"", "count":0})
-
-    day_chart = alt.Chart(dys).mark_bar().encode(
-        x=alt.X("day:O", sort=days_order, title="Day of Week"),
-        y=alt.Y("count:Q", title="Mentions"),
-        color=alt.condition(alt.datum.count>0, alt.value("steelblue"), alt.value("lightgray")),
-        tooltip=[alt.Tooltip("day:O","Day"), alt.Tooltip("sentences:N","Sentences")]
-    ).properties(width=600, height=200)
+    
+    day_chart = (
+        alt.Chart(dys)
+           .mark_bar()
+           .encode(
+             x=alt.X("day:O", sort=days_order, title="Day of Week"),
+             y=alt.Y("count:Q", title="Mentions"),
+             color=alt.condition(
+               alt.datum.count > 0,
+               alt.value("steelblue"),
+               alt.value("lightgray")
+             ),
+             tooltip=[
+               alt.Tooltip("day:O", title="Day"),
+               alt.Tooltip("sentences:N", title="Sentences")
+             ]
+           )
+           .properties(width=600, height=200)
+    )
     st.altair_chart(day_chart, use_container_width=True)
 
     # — Impacts Icons ——
