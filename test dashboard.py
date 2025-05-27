@@ -94,10 +94,20 @@ def page_overtourism():
 
     # style functions
     def style_district(feat):
-        return {"fillColor":"#a1d99b","color":"black","weight":1,"fillOpacity":0.3}
+        return {
+            "fillColor": "#fcbba1",  # light red
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.3
+        }
 
     def style_neighbourhood(feat):
-        return {"fillColor":"#31a354","color":"black","weight":1,"fillOpacity":0.5}
+        return {
+            "fillColor": "#cb181d",  # dark red
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.5
+        }
 
     def style_nuisance(feat):
         val = feat["properties"].get("pct_nuisance")
@@ -106,13 +116,15 @@ def page_overtourism():
         return {"fillColor":cmap(val),"color":"black","weight":1,"fillOpacity":0.7}
 
     # prepare the nuisance colormap
+    # — prepare the nuisance colormap for right map (white → dark red) —
     vmax = nuis_gdf["pct_nuisance"].max()
     cmap = branca.colormap.LinearColormap(
-        ["green","yellow","red"], vmin=0, vmax=vmax,
+        ["white", "#cb181d"],
+        vmin=0,
+        vmax=vmax,
         caption="% Residents Experiencing Nuisance"
     )
 
-    # — Render two maps in columns —
     col1, col2 = st.columns(2)
 
     # Left: Overtourism Places map
@@ -120,7 +132,7 @@ def page_overtourism():
         st.subheader("Places")
         m1 = folium.Map(
             location=[52.37, 4.90],
-            zoom_start=11, min_zoom=11, max_zoom=15, max_bounds=True,
+            zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
             tiles="CartoDB positron"
         )
         for _, r in dist_gdf.iterrows():
@@ -141,30 +153,36 @@ def page_overtourism():
             ).add_to(m1)
         st_html(m1._repr_html_(), width=None, height=600, scrolling=False)
 
-    # Right: Tourism Nuisance choropleth
+    # Right: Tourism Nuisance choropleth (white→dark red, semi-transparent, no year)
     with col2:
         st.subheader("Tourism Nuisance")
         m2 = folium.Map(
             location=[52.37, 4.90],
-            zoom_start=11, min_zoom=11, max_zoom=15, max_bounds=True,
+            zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
             tiles="CartoDB positron"
         )
         folium.Choropleth(
             geo_data=nuis_gdf.__geo_interface__,
             data=nuis_gdf,
-            columns=["name","pct_nuisance"],
+            columns=["name", "pct_nuisance"],
             key_on="feature.properties.name",
-            fill_color="YlOrRd",
-            fill_opacity=0.7,
+            fill_color="YlOrRd",             # base for legend
+            fill_opacity=0.5,                # semi-transparent
             line_opacity=0.2,
+            threshold_scale=[0, vmax / 2, vmax],  # optional smoothing
             legend_name="% Nuisance"
         ).add_to(m2)
         folium.GeoJson(
             data=nuis_gdf.__geo_interface__,
-            style_function=style_nuisance,
+            style_function=lambda feat: {
+                "fillColor": cmap(feat["properties"]["pct_nuisance"]),
+                "color": "black",
+                "weight": 1,
+                "fillOpacity": 0.5
+            },
             tooltip=folium.GeoJsonTooltip(
-                fields=["name","pct_nuisance"],
-                aliases=["Neighbourhood","% Nuisance"],
+                fields=["name", "pct_nuisance"],
+                aliases=["Neighbourhood", "% Nuisance"],
                 localize=True
             )
         ).add_to(m2)
