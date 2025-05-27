@@ -153,25 +153,17 @@ def page_overtourism():
             ).add_to(m1)
         st_html(m1._repr_html_(), width=None, height=600, scrolling=False)
 
-    # Right: Tourism Nuisance choropleth (white→dark red, semi-transparent, no year)
+    # Right: Tourism Nuisance continuous map (white → dark red, semi-transparent)
     with col2:
         st.subheader("Tourism Nuisance")
+        # Base map
         m2 = folium.Map(
             location=[52.37, 4.90],
             zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
             tiles="CartoDB positron"
         )
-        folium.Choropleth(
-            geo_data=nuis_gdf.__geo_interface__,
-            data=nuis_gdf,
-            columns=["name", "pct_nuisance"],
-            key_on="feature.properties.name",
-            fill_color="YlOrRd",             # base for legend
-            fill_opacity=0.5,                # semi-transparent
-            line_opacity=0.2,
-            threshold_scale=[0, vmax / 2, vmax],  # optional smoothing
-            legend_name="% Nuisance"
-        ).add_to(m2)
+
+        # Single GeoJson layer styled by our continuous cmap
         folium.GeoJson(
             data=nuis_gdf.__geo_interface__,
             style_function=lambda feat: {
@@ -186,7 +178,11 @@ def page_overtourism():
                 localize=True
             )
         ).add_to(m2)
+
+        # Add the continuous color legend
         cmap.add_to(m2)
+
+        # Render full-width, no scrollbar
         st_html(m2._repr_html_(), width=None, height=600, scrolling=False)
 
     # — Moments Graphs ——
