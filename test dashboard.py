@@ -155,7 +155,6 @@ def page_overtourism():
 
     # Right: Tourism Nuisance continuous map (white → dark red, semi-transparent)
     with col2:
-        st.subheader("Tourism Nuisance")
         # 1) Base map
         m2 = folium.Map(
             location=[52.37, 4.90],
