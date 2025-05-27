@@ -151,7 +151,7 @@ def page_overtourism():
                 tooltip=folium.Tooltip(r["name"], sticky=True),
                 popup=folium.Popup(iframe, max_width=320)
             ).add_to(m1)
-        st_html(m1._repr_html_(), width=None, height=600, scrolling=False)
+        st_html(m1._repr_html_(), width=None, height=400, scrolling=False)
 
     # Right: Tourism Nuisance continuous map (white → dark red, semi-transparent)
     with col2:
@@ -170,7 +170,7 @@ def page_overtourism():
                 "fillColor": cmap(feat["properties"]["pct_nuisance"]),
                 "color": "black",
                 "weight": 1,
-                "fillOpacity": 0.5
+                "fillOpacity": 0.7
             },
             tooltip=folium.GeoJsonTooltip(
                 fields=["name", "pct_nuisance"],
@@ -184,7 +184,7 @@ def page_overtourism():
         st_html(
             m2._repr_html_(),
             width=None,
-            height=600,
+            height=400,
             scrolling=False
         )
 
