@@ -61,30 +61,84 @@ def page_overtourism():
 
     # — Places Map ——
     st.subheader("Places")
-    st.markdown("Hover or click a neighbourhood to see the sentences that mention it.")
-    neigh_gdf = load_neighbourhoods()
+    st.markdown("Hover or click a polygon to see the sentences that mention it.")
+    
+    # Load and filter
+    neigh_gdf = load_neighbourhoods()  # your GeoJSON now has a 'level' column
     places_df = media[media.type == "place"]
-    # only draw those neighbourhoods actually mentioned
     mentioned = places_df.neighbourhood.unique().tolist()
-    draw_gdf = neigh_gdf[neigh_gdf["name"].isin(mentioned)]
-
-    # group and concatenate sentences per neighbourhood
+    
+    # Split by level
+    dist_gdf = neigh_gdf[
+        (neigh_gdf["name"].isin(mentioned)) &
+        (neigh_gdf["level"] == "District")
+    ]
+    neigh_only_gdf = neigh_gdf[
+        (neigh_gdf["name"].isin(mentioned)) &
+        (neigh_gdf["level"] == "Neighbourhood")
+    ]
+    
+    # Build HTML pop-up content (with small wrapped text)
     popup_map = {}
     for n, grp in places_df.groupby("neighbourhood"):
-        html = ""
+        lines = ""
         for _, row in grp.iterrows():
-            html += f"<b>{n}</b> {row.sentence}<br><i>({row.source})</i><br><br>"
-        popup_map[n] = html
-
-    m = folium.Map(location=[52.37, 4.90], zoom_start=12)
-    def style_fn(feat): return {"fillColor":"#4CAF50","color":"black","weight":1,"fillOpacity":0.4}
-    for _, r in draw_gdf.iterrows():
-        n = r["name"]
+            # wrap in a styled div
+            lines += (
+                f"<div style='font-size:12px; line-height:1.2; "
+                f"white-space:normal; max-width:250px;'>"
+                f"<b>{n}</b> {row.sentence}<br>"
+                f"<i>({row.source})</i></div><hr style='margin:4px 0;'>"
+            )
+        popup_map[n] = lines
+    
+    # Create a greyscale base map
+    m = folium.Map(
+        location=[52.37, 4.90],
+        zoom_start=12,
+        tiles="CartoDB positron"  # light greyscale
+    )
+    
+    # Style functions
+    def style_district(feat):
+        return {
+            "fillColor": "#a1d99b",  # light green
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.3
+        }
+    
+    def style_neighbourhood(feat):
+        return {
+            "fillColor": "#31a354",  # darker green
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.5
+        }
+    
+    # Add districts (behind)
+    for _, r in dist_gdf.iterrows():
         folium.GeoJson(
-            data=r["geometry"],
-            style_function=style_fn,
-            tooltip=folium.Tooltip(popup_map[n], sticky=True, max_width=300)
+            data=r.__geo_interface__,
+            style_function=style_district,
+            tooltip=folium.Tooltip(r["name"], sticky=True),
+            popup=folium.Popup(popup_map[r["name"]],
+                               max_width=270,
+                               parse_html=True)
         ).add_to(m)
+    
+    # Add neighbourhoods (on top)
+    for _, r in neigh_only_gdf.iterrows():
+        folium.GeoJson(
+            data=r.__geo_interface__,
+            style_function=style_neighbourhood,
+            tooltip=folium.Tooltip(r["name"], sticky=True),
+            popup=folium.Popup(popup_map[r["name"]],
+                               max_width=300,
+                               parse_html=True)
+        ).add_to(m)
+    
+    # Render in Streamlit
     st_folium(m, width=700, height=450)
 
     # — Moments Graphs ——
