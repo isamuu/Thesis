@@ -120,7 +120,7 @@ def page_overtourism():
         st.subheader("Places")
         m1 = folium.Map(
             location=[52.37, 4.90],
-            zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
+            zoom_start=11, min_zoom=11, max_zoom=15, max_bounds=True,
             tiles="CartoDB positron"
         )
         for _, r in dist_gdf.iterrows():
@@ -146,7 +146,7 @@ def page_overtourism():
         st.subheader("Tourism Nuisance")
         m2 = folium.Map(
             location=[52.37, 4.90],
-            zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
+            zoom_start=11, min_zoom=11, max_zoom=15, max_bounds=True,
             tiles="CartoDB positron"
         )
         folium.Choropleth(
@@ -163,8 +163,8 @@ def page_overtourism():
             data=nuis_gdf.__geo_interface__,
             style_function=style_nuisance,
             tooltip=folium.GeoJsonTooltip(
-                fields=["name","pct_nuisance","jaar"],
-                aliases=["Neighbourhood","% Nuisance","Year"],
+                fields=["name","pct_nuisance"],
+                aliases=["Neighbourhood","% Nuisance"],
                 localize=True
             )
         ).add_to(m2)
