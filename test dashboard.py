@@ -148,8 +148,9 @@ def page_overtourism():
     # 4) Render full-width in Streamlit
     st_html(
         m._repr_html_(),
-        width="100%",
-        height=500  # adjust as needed
+        width=None,    # let Streamlit stretch it to the container
+        height=500,
+        scrolling=True
     )
 
     # — Moments Graphs ——
