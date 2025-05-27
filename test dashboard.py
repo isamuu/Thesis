@@ -288,9 +288,14 @@ def page_tourism_dynamics():
     unique_days = sorted(data['datetime'].dt.date.unique())
     col1, col2 = st.columns(2)
     with col1:
-        selected_day = st.selectbox("Select Day", unique_days)
+        selected_day = st.selectbox(
+            "Select Day",
+            unique_days,
+            format_func=lambda d: d.strftime("%A")  # show “Monday”, “Tuesday”, etc.
+        )
     with col2:
         selected_hour = st.slider("Select Hour", 0, 23, 0)
+
     selected_dt = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
 
     # — Data subset & map —
