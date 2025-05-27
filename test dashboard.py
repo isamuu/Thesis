@@ -124,10 +124,11 @@ def page_overtourism():
         vmax=vmax,
         caption="% Residents Experiencing Nuisance"
     )
+    st.subheader("Places")
 
     col1, col2 = st.columns(2)
 
-    st.subheader("Places")
+    
     # Left: Overtourism Places map
     with col1:
         m1 = folium.Map(
