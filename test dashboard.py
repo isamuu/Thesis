@@ -4,6 +4,9 @@ import geopandas as gpd
 from shapely import wkt
 import pydeck as pdk
 import datetime
+import altair as alt
+import folium
+from streamlit_folium import st_folium
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
@@ -18,6 +21,13 @@ def load_data():
     gdf = gdf.rename(columns={"Datetime": "datetime"})
     gdf['datetime'] = pd.to_datetime(gdf['datetime'])
     return gdf
+
+@st.cache_data
+def load_media_data():
+    return pd.read_csv("media_analysis_sentences.csv")
+@st.cache_data
+def load_neighbourhoods():
+    return gpd.read_file("amsterdam_neighbourhoods.geojson")
 
 data = load_data()
 
@@ -47,6 +57,87 @@ def page_overtourism():
     - Peaks on Friday/Saturday evenings and holidays  
     - Erosion of social familiarity & local liveability
     """)
+    media = load_media_data()
+
+    # — Places Map ——
+    st.subheader("Places")
+    st.markdown("Hover or click a neighbourhood to see the sentences that mention it.")
+    neigh_gdf = load_neighbourhoods()
+    places_df = media[media.type == "place"]
+    # only draw those neighbourhoods actually mentioned
+    mentioned = places_df.neighbourhood.unique().tolist()
+    draw_gdf = neigh_gdf[neigh_gdf["name"].isin(mentioned)]
+
+    # group and concatenate sentences per neighbourhood
+    popup_map = {}
+    for n, grp in places_df.groupby("neighbourhood"):
+        html = ""
+        for _, row in grp.iterrows():
+            html += f"<b>{n}</b> {row.sentence}<br><i>({row.source})</i><br><br>"
+        popup_map[n] = html
+
+    m = folium.Map(location=[52.37, 4.90], zoom_start=12)
+    def style_fn(feat): return {"fillColor":"#4CAF50","color":"black","weight":1,"fillOpacity":0.4}
+    for _, r in draw_gdf.iterrows():
+        n = r["name"]
+        folium.GeoJson(
+            data=r["geometry"],
+            style_function=style_fn,
+            tooltip=folium.Tooltip(popup_map[n], sticky=True, max_width=300)
+        ).add_to(m)
+    st_folium(m, width=700, height=450)
+
+    # — Moments Graphs ——
+    st.subheader("Moments")
+    st.markdown("Bars in **blue** are hours/days mentioned in the texts. Hover to read the sentences.")
+    moments = media[media.type == "moment"]
+
+    # prepare hours
+    hrs = (moments.groupby("hour")
+                   .sentence
+                   .apply(lambda s: "<br>".join(s))
+                   .reset_index(name="sentences"))
+    hrs["count"] = hrs.sentences.str.count("<br>") + 1
+    full_hrs = pd.DataFrame({"hour": list(range(24))})
+    hrs = full_hrs.merge(hrs, on="hour", how="left").fillna({"sentences":"", "count":0})
+
+    hour_chart = alt.Chart(hrs).mark_bar().encode(
+        x=alt.X("hour:O", title="Hour of Day"),
+        y=alt.Y("count:Q", title="Mentions"),
+        color=alt.condition(alt.datum.count>0, alt.value("steelblue"), alt.value("lightgray")),
+        tooltip=[alt.Tooltip("hour:O","Hour"), alt.Tooltip("sentences:N","Sentences")]
+    ).properties(width=600, height=200)
+    st.altair_chart(hour_chart, use_container_width=True)
+
+    # prepare days
+    days_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+    dys = (moments.groupby("day")
+                  .sentence
+                  .apply(lambda s: "<br>".join(s))
+                  .reset_index(name="sentences"))
+    dys["count"] = dys.sentences.str.count("<br>") + 1
+    full_days = pd.DataFrame({"day": days_order})
+    dys = full_days.merge(dys, on="day", how="left").fillna({"sentences":"", "count":0})
+
+    day_chart = alt.Chart(dys).mark_bar().encode(
+        x=alt.X("day:O", sort=days_order, title="Day of Week"),
+        y=alt.Y("count:Q", title="Mentions"),
+        color=alt.condition(alt.datum.count>0, alt.value("steelblue"), alt.value("lightgray")),
+        tooltip=[alt.Tooltip("day:O","Day"), alt.Tooltip("sentences:N","Sentences")]
+    ).properties(width=600, height=200)
+    st.altair_chart(day_chart, use_container_width=True)
+
+    # — Impacts Icons ——
+    st.subheader("Impacts")
+    st.markdown("Click an icon to read all related sentences.")
+    impacts = media[media.type == "impact"].groupby("impact_type").sentence.apply(list).to_dict()
+    cols = st.columns(3)
+    icons = {"nuisance":"😡", "economy":"💰", "familiarity":"🤝"}
+    for col, imp in zip(cols, impacts):
+        with col:
+            with st.expander(f"{icons[imp]} {imp.title()}"):
+                for s in impacts[imp]:
+                    st.write(f"- {s}")
 
 def page_tourism_dynamics():
     st.title("Tourism Dynamics")
