@@ -8,6 +8,7 @@ import altair as alt
 import folium
 from streamlit_folium import st_folium
 from folium import IFrame
+from streamlit.components.v1 import html as st_html
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
@@ -93,17 +94,20 @@ def page_overtourism():
             )
         popup_map[n] = lines
     
-    # Create a greyscale base map
+    # 1) Create a greyscale base map locked to Amsterdam
     m = folium.Map(
         location=[52.37, 4.90],
         zoom_start=12,
-        tiles="CartoDB positron"  # light greyscale
+        min_zoom=11,       # can't zoom out past level 11
+        max_zoom=15,       # can't zoom in past level 15
+        max_bounds=True,   # can't pan outside initial bounds
+        tiles="CartoDB positron"
     )
     
     # Style functions
     def style_district(feat):
         return {
-            "fillColor": "#a1d99b",  # light green
+            "fillColor": "#f34242",  # light green
             "color": "black",
             "weight": 1,
             "fillOpacity": 0.3
@@ -111,19 +115,17 @@ def page_overtourism():
     
     def style_neighbourhood(feat):
         return {
-            "fillColor": "#31a354",  # darker green
+            "fillColor": "#b20c0c",  # darker green
             "color": "black",
             "weight": 1,
             "fillOpacity": 0.5
         }
     
-    # Add districts (behind)
+    # 2) Add Districts behind
     for _, r in dist_gdf.iterrows():
         name = r["name"]
-        html = popup_map.get(name, "")
-        iframe = IFrame(html=html, width=270, height=150)
+        iframe = IFrame(html=popup_map[name], width=270, height=150)
         popup = folium.Popup(iframe, max_width=300)
-    
         folium.GeoJson(
             data=r.geometry.__geo_interface__,
             style_function=style_district,
@@ -131,13 +133,11 @@ def page_overtourism():
             popup=popup
         ).add_to(m)
     
-    # Add neighbourhoods (on top)
+    # 3) Add Neighbourhoods on top
     for _, r in neigh_only_gdf.iterrows():
         name = r["name"]
-        html = popup_map.get(name, "")
-        iframe = IFrame(html=html, width=300, height=180)
+        iframe = IFrame(html=popup_map[name], width=300, height=180)
         popup = folium.Popup(iframe, max_width=320)
-    
         folium.GeoJson(
             data=r.geometry.__geo_interface__,
             style_function=style_neighbourhood,
@@ -145,8 +145,12 @@ def page_overtourism():
             popup=popup
         ).add_to(m)
     
-    # Render in Streamlit
-    st_folium(m, width=700, height=450)
+    # 4) Render full-width in Streamlit
+    st_html(
+        m._repr_html_(),
+        width="100%",
+        height=500  # adjust as needed
+    )
 
     # — Moments Graphs ——
     st.subheader("Moments")
