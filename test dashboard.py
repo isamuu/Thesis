@@ -104,92 +104,92 @@ def page_overtourism():
         popup_map[n] = lines
     if choice == "Overtourism Places":
     
-    # Style functions
-    def style_district(feat):
-        return {
-            "fillColor": "#f34242",  # light green
-            "color": "black",
-            "weight": 1,
-            "fillOpacity": 0.3
-        }
+        # Style functions
+        def style_district(feat):
+            return {
+                "fillColor": "#f34242",  # light green
+                "color": "black",
+                "weight": 1,
+                "fillOpacity": 0.3
+            }
+        
+        def style_neighbourhood(feat):
+            return {
+                "fillColor": "#b20c0c",  # darker green
+                "color": "black",
+                "weight": 1,
+                "fillOpacity": 0.5
+            }
+        
+        # add districts then neighbourhoods…
+        for _, r in dist_gdf.iterrows():
+            iframe = IFrame(html=popup_map[r["name"]], width=270, height=150)
+            folium.Popup(iframe, max_width=300)
+            folium.GeoJson(
+                data=r.geometry.__geo_interface__,
+                style_function=style_district,
+                tooltip=folium.Tooltip(r["name"], sticky=True),
+                popup=folium.Popup(iframe, max_width=300)
+            ).add_to(m)
+        for _, r in neigh_only_gdf.iterrows():
+            iframe = IFrame(html=popup_map[r["name"]], width=300, height=180)
+            folium.GeoJson(
+                data=r.geometry.__geo_interface__,
+                style_function=style_neighbourhood,
+                tooltip=folium.Tooltip(r["name"], sticky=True),
+                popup=folium.Popup(iframe, max_width=320)
+            ).add_to(m)
     
-    def style_neighbourhood(feat):
-        return {
-            "fillColor": "#b20c0c",  # darker green
-            "color": "black",
-            "weight": 1,
-            "fillOpacity": 0.5
-        }
-    
-    # add districts then neighbourhoods…
-    for _, r in dist_gdf.iterrows():
-        iframe = IFrame(html=popup_map[r["name"]], width=270, height=150)
-        folium.Popup(iframe, max_width=300)
-        folium.GeoJson(
-            data=r.geometry.__geo_interface__,
-            style_function=style_district,
-            tooltip=folium.Tooltip(r["name"], sticky=True),
-            popup=folium.Popup(iframe, max_width=300)
-        ).add_to(m)
-    for _, r in neigh_only_gdf.iterrows():
-        iframe = IFrame(html=popup_map[r["name"]], width=300, height=180)
-        folium.GeoJson(
-            data=r.geometry.__geo_interface__,
-            style_function=style_neighbourhood,
-            tooltip=folium.Tooltip(r["name"], sticky=True),
-            popup=folium.Popup(iframe, max_width=320)
-        ).add_to(m)
-
-else:
-    # — Tourism Nuisance Choropleth —
-    nuis_gdf = load_nuisance_data().query("level=='Neighbourhood'")
-    # a linear color map from green (0%) to red (max%)
-    vmax = nuis_gdf["pct_nuisance"].max()
-    cmap = branca.colormap.LinearColormap(
-        ["green","yellow","red"], vmin=0, vmax=vmax,
-        caption="% Residents Experiencing Nuisance"
-    )
-    m = folium.Map(
-        location=[52.37, 4.90], zoom_start=12,
-        min_zoom=11, max_zoom=15, max_bounds=True,
-        tiles="CartoDB positron"
-    )
-    # add choropleth
-    folium.Choropleth(
-        geo_data=nuis_gdf.__geo_interface__,
-        data=nuis_gdf,
-        columns=["name","pct_nuisance"],
-        key_on="feature.properties.name",
-        fill_color="YlOrRd",
-        fill_opacity=0.7,
-        line_opacity=0.2,
-        legend_name="% Nuisance"
-    ).add_to(m)
-    # tooltips for precise values
-    folium.GeoJson(
-        data=nuis_gdf.__geo_interface__,
-        style_function=lambda feat: {
-            "fillColor": cmap(feat["properties"]["pct_nuisance"]),
-            "color": "black",
-            "weight": 1,
-            "fillOpacity": 0.7
-        },
-        tooltip=folium.GeoJsonTooltip(
-            fields=["name","pct_nuisance","jaar"],
-            aliases=["Neighbourhood","% Nuisance","Year"],
-            localize=True
+    else:
+        # — Tourism Nuisance Choropleth —
+        nuis_gdf = load_nuisance_data().query("level=='Neighbourhood'")
+        # a linear color map from green (0%) to red (max%)
+        vmax = nuis_gdf["pct_nuisance"].max()
+        cmap = branca.colormap.LinearColormap(
+            ["green","yellow","red"], vmin=0, vmax=vmax,
+            caption="% Residents Experiencing Nuisance"
         )
-    ).add_to(m)
-    # add the color map control
-    cmap.add_to(m)
-
-# — Render full-width, no scrollbars —
-st_html(
-    m._repr_html_(),
-    width=None,
-    height=600,
-    scrolling=False
-)
+        m = folium.Map(
+            location=[52.37, 4.90], zoom_start=12,
+            min_zoom=11, max_zoom=15, max_bounds=True,
+            tiles="CartoDB positron"
+        )
+        # add choropleth
+        folium.Choropleth(
+            geo_data=nuis_gdf.__geo_interface__,
+            data=nuis_gdf,
+            columns=["name","pct_nuisance"],
+            key_on="feature.properties.name",
+            fill_color="YlOrRd",
+            fill_opacity=0.7,
+            line_opacity=0.2,
+            legend_name="% Nuisance"
+        ).add_to(m)
+        # tooltips for precise values
+        folium.GeoJson(
+            data=nuis_gdf.__geo_interface__,
+            style_function=lambda feat: {
+                "fillColor": cmap(feat["properties"]["pct_nuisance"]),
+                "color": "black",
+                "weight": 1,
+                "fillOpacity": 0.7
+            },
+            tooltip=folium.GeoJsonTooltip(
+                fields=["name","pct_nuisance","jaar"],
+                aliases=["Neighbourhood","% Nuisance","Year"],
+                localize=True
+            )
+        ).add_to(m)
+        # add the color map control
+        cmap.add_to(m)
+    
+    # — Render full-width, no scrollbars —
+    st_html(
+        m._repr_html_(),
+        width=None,
+        height=600,
+        scrolling=False
+    )
 
     # — Moments Graphs ——
     st.subheader("Moments")
