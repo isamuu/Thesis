@@ -33,7 +33,7 @@ def load_neighbourhoods():
     return gpd.read_file("amsterdam_neighbourhoods.geojson")
 @st.cache_data
 def load_nuisance_data():
-    df = pd.read_csv("nuisance_data.csv")
+    df = pd.read_csv("overtourism_neighbourhoods.csv")
     df["geometry"] = df["geometry"].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
     return gdf
