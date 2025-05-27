@@ -7,4 +7,3 @@ datetime
 altair
 folium
 streamlit_folium
-streamlit.components.v1
