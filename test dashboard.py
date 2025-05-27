@@ -6,6 +6,7 @@ import pydeck as pdk
 import datetime
 import altair as alt
 import folium
+import branca
 from streamlit_folium import st_folium
 from folium import IFrame
 from streamlit.components.v1 import html as st_html
@@ -30,6 +31,12 @@ def load_media_data():
 @st.cache_data
 def load_neighbourhoods():
     return gpd.read_file("amsterdam_neighbourhoods.geojson")
+@st.cache_data
+def load_nuisance_data():
+    df = pd.read_csv("nuisance_data.csv")
+    df["geometry"] = df["geometry"].apply(wkt.loads)
+    gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
+    return gdf
 
 data = load_data()
 
@@ -60,10 +67,12 @@ def page_overtourism():
     - Erosion of social familiarity & local liveability
     """)
     media = load_media_data()
+    
 
     # — Places Map ——
     st.subheader("Places")
     st.markdown("Hover or click a polygon to see the sentences that mention it.")
+    choice = st.selectbox("Choose map layer", ["Overtourism Places", "Tourism Nuisance"])
     
     # Load and filter
     neigh_gdf = load_neighbourhoods()  # your GeoJSON now has a 'level' column
@@ -93,16 +102,7 @@ def page_overtourism():
                 f"<i>({row.source})</i></div><hr style='margin:4px 0;'>"
             )
         popup_map[n] = lines
-    
-    # 1) Create a greyscale base map locked to Amsterdam
-    m = folium.Map(
-        location=[52.37, 4.90],
-        zoom_start=12,
-        min_zoom=11,       # can't zoom out past level 11
-        max_zoom=15,       # can't zoom in past level 15
-        max_bounds=True,   # can't pan outside initial bounds
-        tiles="CartoDB positron"
-    )
+    if choice == "Overtourism Places":
     
     # Style functions
     def style_district(feat):
@@ -121,37 +121,75 @@ def page_overtourism():
             "fillOpacity": 0.5
         }
     
-    # 2) Add Districts behind
+    # add districts then neighbourhoods…
     for _, r in dist_gdf.iterrows():
-        name = r["name"]
-        iframe = IFrame(html=popup_map[name], width=270, height=150)
-        popup = folium.Popup(iframe, max_width=300)
+        iframe = IFrame(html=popup_map[r["name"]], width=270, height=150)
+        folium.Popup(iframe, max_width=300)
         folium.GeoJson(
             data=r.geometry.__geo_interface__,
             style_function=style_district,
-            tooltip=folium.Tooltip(name, sticky=True),
-            popup=popup
+            tooltip=folium.Tooltip(r["name"], sticky=True),
+            popup=folium.Popup(iframe, max_width=300)
         ).add_to(m)
-    
-    # 3) Add Neighbourhoods on top
     for _, r in neigh_only_gdf.iterrows():
-        name = r["name"]
-        iframe = IFrame(html=popup_map[name], width=300, height=180)
-        popup = folium.Popup(iframe, max_width=320)
+        iframe = IFrame(html=popup_map[r["name"]], width=300, height=180)
         folium.GeoJson(
             data=r.geometry.__geo_interface__,
             style_function=style_neighbourhood,
-            tooltip=folium.Tooltip(name, sticky=True),
-            popup=popup
+            tooltip=folium.Tooltip(r["name"], sticky=True),
+            popup=folium.Popup(iframe, max_width=320)
         ).add_to(m)
-    
-    # 4) Render full-width in Streamlit without scrollbars
-    st_html(
-        m._repr_html_(),
-        width=None,       # stretch to fill the column
-        height=600,       # make this tall enough to fit your map
-        scrolling=False   # disable the HTML container’s scrollbars
+
+else:
+    # — Tourism Nuisance Choropleth —
+    nuis_gdf = load_nuisance_data().query("level=='Neighbourhood'")
+    # a linear color map from green (0%) to red (max%)
+    vmax = nuis_gdf["pct_nuisance"].max()
+    cmap = branca.colormap.LinearColormap(
+        ["green","yellow","red"], vmin=0, vmax=vmax,
+        caption="% Residents Experiencing Nuisance"
     )
+    m = folium.Map(
+        location=[52.37, 4.90], zoom_start=12,
+        min_zoom=11, max_zoom=15, max_bounds=True,
+        tiles="CartoDB positron"
+    )
+    # add choropleth
+    folium.Choropleth(
+        geo_data=nuis_gdf.__geo_interface__,
+        data=nuis_gdf,
+        columns=["name","pct_nuisance"],
+        key_on="feature.properties.name",
+        fill_color="YlOrRd",
+        fill_opacity=0.7,
+        line_opacity=0.2,
+        legend_name="% Nuisance"
+    ).add_to(m)
+    # tooltips for precise values
+    folium.GeoJson(
+        data=nuis_gdf.__geo_interface__,
+        style_function=lambda feat: {
+            "fillColor": cmap(feat["properties"]["pct_nuisance"]),
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.7
+        },
+        tooltip=folium.GeoJsonTooltip(
+            fields=["name","pct_nuisance","jaar"],
+            aliases=["Neighbourhood","% Nuisance","Year"],
+            localize=True
+        )
+    ).add_to(m)
+    # add the color map control
+    cmap.add_to(m)
+
+# — Render full-width, no scrollbars —
+st_html(
+    m._repr_html_(),
+    width=None,
+    height=600,
+    scrolling=False
+)
 
     # — Moments Graphs ——
     st.subheader("Moments")
