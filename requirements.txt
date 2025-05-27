@@ -4,3 +4,6 @@ geopandas
 pydeck
 shapely
 datetime
+altair
+folium
+streamlit_folium
