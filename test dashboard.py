@@ -119,23 +119,27 @@ def page_overtourism():
     # Add districts (behind)
     for _, r in dist_gdf.iterrows():
         folium.GeoJson(
-            data=r.__geo_interface__,
+            data=r.geometry.__geo_interface__,        # <<-- use r.geometry
             style_function=style_district,
             tooltip=folium.Tooltip(r["name"], sticky=True),
-            popup=folium.Popup(popup_map[r["name"]],
-                               max_width=270,
-                               parse_html=True)
+            popup=folium.Popup(
+                popup_map.get(r["name"], ""),
+                max_width=270,
+                parse_html=True
+            )
         ).add_to(m)
     
     # Add neighbourhoods (on top)
     for _, r in neigh_only_gdf.iterrows():
         folium.GeoJson(
-            data=r.__geo_interface__,
+            data=r.geometry.__geo_interface__,        # <<-- and here too
             style_function=style_neighbourhood,
             tooltip=folium.Tooltip(r["name"], sticky=True),
-            popup=folium.Popup(popup_map[r["name"]],
-                               max_width=300,
-                               parse_html=True)
+            popup=folium.Popup(
+                popup_map.get(r["name"], ""),
+                max_width=300,
+                parse_html=True
+            )
         ).add_to(m)
     
     # Render in Streamlit
