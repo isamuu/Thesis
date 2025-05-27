@@ -24,7 +24,7 @@ def load_data():
 
 @st.cache_data
 def load_media_data():
-    return pd.read_csv("media_analysis_sentences.csv")
+    return pd.read_csv("media_analysis_sentences.csv", sep = ";")
 @st.cache_data
 def load_neighbourhoods():
     return gpd.read_file("amsterdam_neighbourhoods.geojson")
