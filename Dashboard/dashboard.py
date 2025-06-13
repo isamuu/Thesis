@@ -16,7 +16,7 @@ st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 # ——— Data Loading ———
 @st.cache_data
 def load_data():
-    df = pd.read_csv("Datasets/test_pressure_time_small.csv")
+    df = pd.read_csv("Dashboard/Datasets/test_pressure_time_small.csv")
     df.columns = df.columns.str.strip()
     df['geometry'] = df['geometry'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
@@ -27,13 +27,13 @@ def load_data():
 
 @st.cache_data
 def load_media_data():
-    return pd.read_csv("Datasets/media_analysis_sentences.csv", sep = ";")
+    return pd.read_csv("Dashboard/Datasets/media_analysis_sentences.csv", sep = ";")
 @st.cache_data
 def load_neighbourhoods():
-    return gpd.read_file("Datasets/amsterdam_neighbourhoods.geojson")
+    return gpd.read_file("Dashboard/Datasets/amsterdam_neighbourhoods.geojson")
 @st.cache_data
 def load_nuisance_data():
-    df = pd.read_csv("Datasets/overtourism_neighbourhoods.csv")
+    df = pd.read_csv("Dashboard/Datasets/overtourism_neighbourhoods.csv")
     df["geometry"] = df["geometry"].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
     return gdf
