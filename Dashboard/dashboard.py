@@ -16,7 +16,7 @@ st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 # ——— Data Loading ———
 @st.cache_data
 def load_data():
-    df = pd.read_csv("test_pressure_time_small.csv")
+    #df = pd.read_csv("test_pressure_time_small.csv")
     df.columns = df.columns.str.strip()
     df['geometry'] = df['geometry'].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
