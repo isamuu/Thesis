@@ -8,3 +8,7 @@ altair
 folium
 streamlit_folium
 branca
+io
+os
+numpy
+matplotlib
