@@ -8,6 +8,6 @@ altair
 folium
 streamlit_folium
 branca
-os
+pyarrow
 numpy
 matplotlib
