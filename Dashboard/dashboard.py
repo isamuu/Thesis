@@ -13,7 +13,7 @@ from streamlit.components.v1 import html as st_html
 from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
++from PIL import Image
 import os
 import io
 
@@ -410,61 +410,59 @@ def page_tourism_dynamics():
     pressure_ts = data.groupby('datetime')['pressure'].mean().reset_index().set_index('datetime')
     st.line_chart(pressure_ts)
 
-    def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10, dpi: int = 100):
+    def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10) -> bytes:
         """
-        Build a GIF in memory that draws each bundled edge sequentially.
-        Returns: bytes buffer containing the GIF.
+        Manually build an in-memory GIF by capturing each frame from the Matplotlib canvas.
         """
-        # Prepare coordinate sequences
+        # 1) Prepare sequences
         paths = [np.array(line.coords) for line in gdf.geometry]
         cats  = gdf['category'].astype("category")
         visits = gdf['visits'].values
     
-        # Create a color map for categories
+        # 2) Colormap and linewidth
         cmap = plt.get_cmap("tab10")
-        cat_colors = {cat: cmap(i) for i, cat in enumerate(cats.cat.categories)}
+        cat_colors = {c: cmap(i) for i, c in enumerate(cats.cat.categories)}
+        lw = np.interp(visits, [visits.min(), visits.max()], [0.5, 3.0])
     
-        # Scale line‐width by visits (optional)
-        min_v, max_v = visits.min(), visits.max()
-        lw = np.interp(visits, [min_v, max_v], [0.5, 3.0])
-    
+        # 3) Set up figure
         fig, ax = plt.subplots(figsize=(6,6))
         fig.patch.set_facecolor('black')
         ax.set_facecolor('black')
         ax.axis('off')
-    
-        # Compute bounding box from data
         xs = np.concatenate([p[:,0] for p in paths])
         ys = np.concatenate([p[:,1] for p in paths])
         pad = 0.01
         ax.set_xlim(xs.min() - pad, xs.max() + pad)
         ax.set_ylim(ys.min() - pad, ys.max() + pad)
     
-        lines_drawn = []  # to keep references so they stay on the canvas
+        # 4) Capture frames
+        frames = []
+        for i, p in enumerate(paths):
+            ax.plot(p[:,0], p[:,1],
+                    color=cat_colors[gdf['category'].iloc[i]],
+                    lw=lw[i], alpha=0.8)
+            fig.canvas.draw()
+            # grab the RGBA buffer from the figure
+            w, h = fig.canvas.get_width_height()
+            buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
+            buf = buf.reshape((h, w, 3))
+            frames.append(Image.fromarray(buf))
     
-        def update(frame):
-            # draw the next segment
-            p = paths[frame]
-            cat = gdf['category'].iloc[frame]
-            line_obj, = ax.plot(p[:,0], p[:,1],
-                                color=cat_colors[cat],
-                                lw=lw[frame],
-                                alpha=0.8)
-            lines_drawn.append(line_obj)
-            return [line_obj]
-    
-        ani = FuncAnimation(
-            fig, update,
-            frames=len(paths),
-            blit=False,
-            interval=200  # milliseconds between frames
+        # 5) Save to GIF in-memory
+        gif_buf = io.BytesIO()
+        # duration per frame in milliseconds:
+        duration = int(1000 / fps)
+        frames[0].save(
+            gif_buf,
+            format='GIF',
+            save_all=True,
+            append_images=frames[1:],
+            loop=0,
+            duration=duration
         )
-    
-        buf = io.BytesIO()
-        ani.save(buf, writer='pillow', fps=fps, dpi=dpi)
-        buf.seek(0)
+        gif_buf.seek(0)
         plt.close(fig)
-        return buf
+        return gif_buf
     
     # -------------------------------------------------------------------
     st.title("Edge‐Bundled Routes Animation")
