@@ -125,7 +125,7 @@ def load_bundled_routes():
     ]
     for pq in candidates:
         if pq.exists():
-            return gpd.read_parquet(pq, engine="pyarrow")
+              return gpd.read_parquet(pq)    # ← no engine= here
     raise FileNotFoundError(
         f"Could not find 'bundled_routes.parquet' in {candidates}"
     )
