@@ -108,6 +108,30 @@ def load_nuisance_data():
 
     return gdf
 
+@st.cache_data
+def load_bundled_routes():
+    """
+    Look for bundled_routes.parquet in the Dashboard folder or its parent,
+    then load with GeoPandas.
+    """
+    base = Path(__file__).resolve().parent
+    candidates = [
+        base / "bundled_routes.parquet",
+        base.parent / "bundled_routes.parquet",
+    ]
+    for pq in candidates:
+        if pq.exists():
+            return gpd.read_parquet(pq, engine="pyarrow")
+    raise FileNotFoundError(
+        f"Could not find 'bundled_routes.parquet' in {candidates}"
+    )
+
+def load_bundled_routes(path: str = "bundled_routes.parquet") -> gpd.GeoDataFrame:
+    """
+    Load your pre-bundled edges from a GeoParquet.
+    """
+    return gpd.read_parquet(path, engine="pyarrow")
+
 data = load_data()
 
 # ——— Page Functions ———
@@ -386,6 +410,89 @@ def page_tourism_dynamics():
     st.subheader("Pressure Over Time")
     pressure_ts = data.groupby('datetime')['pressure'].mean().reset_index().set_index('datetime')
     st.line_chart(pressure_ts)
+
+    def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10, dpi: int = 100):
+        """
+        Build a GIF in memory that draws each bundled edge sequentially.
+        Returns: bytes buffer containing the GIF.
+        """
+        # Prepare coordinate sequences
+        paths = [np.array(line.coords) for line in gdf.geometry]
+        cats  = gdf['category'].astype("category")
+        visits = gdf['visits'].values
+    
+        # Create a color map for categories
+        cmap = plt.get_cmap("tab10")
+        cat_colors = {cat: cmap(i) for i, cat in enumerate(cats.cat.categories)}
+    
+        # Scale line‐width by visits (optional)
+        min_v, max_v = visits.min(), visits.max()
+        lw = np.interp(visits, [min_v, max_v], [0.5, 3.0])
+    
+        fig, ax = plt.subplots(figsize=(6,6))
+        fig.patch.set_facecolor('black')
+        ax.set_facecolor('black')
+        ax.axis('off')
+    
+        # Compute bounding box from data
+        xs = np.concatenate([p[:,0] for p in paths])
+        ys = np.concatenate([p[:,1] for p in paths])
+        pad = 0.01
+        ax.set_xlim(xs.min() - pad, xs.max() + pad)
+        ax.set_ylim(ys.min() - pad, ys.max() + pad)
+    
+        lines_drawn = []  # to keep references so they stay on the canvas
+    
+        def update(frame):
+            # draw the next segment
+            p = paths[frame]
+            cat = gdf['category'].iloc[frame]
+            line_obj, = ax.plot(p[:,0], p[:,1],
+                                color=cat_colors[cat],
+                                lw=lw[frame],
+                                alpha=0.8)
+            lines_drawn.append(line_obj)
+            return [line_obj]
+    
+        ani = FuncAnimation(
+            fig, update,
+            frames=len(paths),
+            blit=False,
+            interval=200  # milliseconds between frames
+        )
+    
+        buf = io.BytesIO()
+        ani.save(buf, writer='pillow', fps=fps, dpi=dpi)
+        buf.seek(0)
+        plt.close(fig)
+        return buf
+    
+    # -------------------------------------------------------------------
+    st.title("Edge‐Bundled Routes Animation")
+    
+    # 1) Load your bundled data
+    data_path = st.sidebar.text_input("Path to bundled GeoDataFrame", "bundled_routes.geojson")
+    if not os.path.exists(data_path):
+        st.sidebar.error(f"File not found: {data_path}")
+        st.stop()
+    
+    gdf = load_bundled(data_path)
+    
+    # 2) Category filter
+    all_cats = list(gdf['category'].unique())
+    selected = st.sidebar.multiselect("Filter by category", all_cats, default=all_cats)
+    filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
+    
+    st.sidebar.markdown(f"👉 {len(filtered)} / {len(gdf)} edges selected")
+    
+    # 3) Animation parameters
+    fps = st.sidebar.slider("Frames per second", 1, 30, 10)
+    dpi = st.sidebar.slider("Output DPI", 50, 200, 100)
+    
+    if st.sidebar.button("🎬 Generate Animation"):
+        with st.spinner("Rendering GIF... this may take a moment"):
+            buf = create_animation(filtered, fps=fps, dpi=dpi)
+            st.image(buf, caption="Edge‐bundled routes animation", use_column_width=True)
 
 def page_carrying_capacity():
     st.title("Carrying Capacity")
