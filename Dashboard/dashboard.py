@@ -52,10 +52,35 @@ def load_data():
 
 @st.cache_data
 def load_media_data():
-    return pd.read_csv("media_analysis_sentences.csv", sep = ";")
+    base = Path(__file__).resolve().parent
+
+    # look in Dashboard/ then repo root
+    candidates = [
+        base / "media_analysis_sentences.csv",
+        base.parent / "media_analysis_sentences.csv",
+    ]
+    for csv_path in candidates:
+        if csv_path.exists():
+            break
+    else:
+        raise FileNotFoundError(f"Could not find 'media_analysis_sentences.csv' in {candidates}")
+
+    return pd.read_csv(csv_path, sep=";")
 @st.cache_data
 def load_neighbourhoods():
-    return gpd.read_file("amsterdam_neighbourhoods.geojson")
+    base = Path(__file__).resolve().parent
+
+    candidates = [
+        base / "amsterdam_neighbourhoods.geojson",
+        base.parent / "amsterdam_neighbourhoods.geojson",
+    ]
+    for geojson_path in candidates:
+        if geojson_path.exists():
+            break
+    else:
+        raise FileNotFoundError(f"Could not find 'amsterdam_neighbourhoods.geojson' in {candidates}")
+
+    return gpd.read_file(geojson_path)
 @st.cache_data
 def load_nuisance_data():
     df = pd.read_csv("overtourism_neighbourhoods.csv")
