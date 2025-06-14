@@ -14,6 +14,7 @@ from pathlib import Path
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import os
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
