@@ -11,6 +11,11 @@ from streamlit_folium import st_folium
 from folium import IFrame
 from streamlit.components.v1 import html as st_html
 from pathlib import Path
+import numpy as np
+import io
+import os
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
