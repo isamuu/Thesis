@@ -1,2 +1,1 @@
-
-wiat
+The folder contains the full codebase used for scraping data, processing and cleaning datasets, conducting spatial analyses, and generating visualizations and maps. While the scripts are currently unpolished and may not yet be fully documented or modularized, they reflect the complete workflow behind the DeTourism project. Due to time constraints, the code has not yet been cleaned or annotated for external use, but the structure remains accessible for those interested in the process. The cleaning and annotation will be done in the coming week.
