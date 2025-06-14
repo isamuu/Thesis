@@ -1,0 +1,62 @@
+## Data Collection
+To analyze tourist pressure across Amsterdam, data from Google Maps was collected using a scraper that extracts reviews and Popular Times data from public Google Maps listings. These two elements served as key indicators of activity intensity and visitation patterns at different times and locations.
+
+The scraping process was conducted using the Google Maps Scraper by OmkarCloud, which enables the collection of structured data from Google Maps business listings, including metadata such as opening hours, categories, user ratings, reviews, and hourly popularity charts.
+
+Scraping was performed in a systematic and responsible way:
+
+A comprehensive list of activity types was created, covering common tourist-related functions in the city, such as:
+
+Restaurants
+
+Stores
+
+Playgrounds
+
+Shopping malls
+
+Tourist attractions
+
+Event venues
+
+Movie theaters
+
+Monuments
+
+Cafes
+
+Coffeeshops
+
+Activities
+
+Bowling alleys
+
+Clubs
+
+Museums
+
+Parks
+
+Hotels
+
+Bars
+
+Bakeries
+
+Conference centers
+
+This list was cross-referenced with all the “Wijken” (neighborhoods) of Amsterdam to generate queries for the scraper.
+
+For each activity type and neighborhood, locations were identified and scraped for:
+
+Review data (excluding usernames)
+
+Popular times data, which provides hourly activity estimates per day
+
+The resulting datasets were cleaned and merged into a single dataset containing all review and activity time data for relevant locations across Amsterdam. To ensure privacy and ethical compliance:
+
+All usernames were immediately deleted.
+
+User IDs were anonymized using a hashing algorithm.
+
+The scraping process was approved through a Human Research Ethics Committee (HREC) procedure, ensuring all data collection adhered to ethical standards and only used publicly available data.
