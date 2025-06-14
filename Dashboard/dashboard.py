@@ -440,7 +440,7 @@ def page_tourism_dynamics():
             ax.plot(
                 p[:,0], p[:,1],
                 color=cat_colors[gdf['category'].iloc[i]],
-                lw=lw[i], alpha=0.8
+                lw=lw[i], alpha=0.1
             )
             buf_png = io.BytesIO()
             fig.savefig(
