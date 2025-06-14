@@ -83,9 +83,29 @@ def load_neighbourhoods():
     return gpd.read_file(geojson_path)
 @st.cache_data
 def load_nuisance_data():
-    df = pd.read_csv("overtourism_neighbourhoods.csv")
+    # folder containing this script (e.g. .../Dashboard)
+    base = Path(__file__).resolve().parent
+
+    # two places we might have put the CSV
+    candidates = [
+        base / "overtourism_neighbourhoods.csv",
+        base.parent / "overtourism_neighbourhoods.csv",
+    ]
+
+    # pick the first one that exists
+    for csv_path in candidates:
+        if csv_path.exists():
+            break
+    else:
+        raise FileNotFoundError(
+            f"Could not find 'overtourism_neighbourhoods.csv' in {candidates}"
+        )
+
+    # load and convert to GeoDataFrame
+    df = pd.read_csv(csv_path)
     df["geometry"] = df["geometry"].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
+
     return gdf
 
 data = load_data()
