@@ -17,26 +17,36 @@ st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 # ——— Data Loading ———
 @st.cache_data
 def load_data():
-    # resolve folder containing this script
+    # folder where this script lives (e.g. .../Dashboard)
     base = Path(__file__).resolve().parent
-    csv_path = base / "test_pressure_time_small.csv"
-    
-    # fail fast if missing
-    if not csv_path.exists():
-        raise FileNotFoundError(f"Could not find {csv_path!r}")
-    
-    # read and clean
+
+    # try both Dashboard/ and its parent (repo root)
+    candidates = [
+        base / "test_pressure_time_small.csv",
+        base.parent / "test_pressure_time_small.csv",
+    ]
+
+    for csv_path in candidates:
+        if csv_path.exists():
+            break
+    else:
+        raise FileNotFoundError(
+            f"Could not find 'test_pressure_time_small.csv' in {candidates}"
+        )
+
+    # load & clean
     df = pd.read_csv(csv_path)
     df.columns = df.columns.str.strip()
     df['geometry'] = df['geometry'].apply(wkt.loads)
-    
-    # build GeoDataFrame
+
+    # make GeoDataFrame
     gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
     gdf['lat'], gdf['lon'] = gdf.geometry.y, gdf.geometry.x
-    
+
     # normalize datetime
     gdf = gdf.rename(columns={"Datetime": "datetime"})
     gdf['datetime'] = pd.to_datetime(gdf['datetime'])
+
     
     return gdf
 
