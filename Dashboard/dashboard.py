@@ -468,29 +468,27 @@ def page_tourism_dynamics():
     # -------------------------------------------------------------------
     st.title("Edge‐Bundled Routes Animation")
     
-    # 1) Load your bundled data
-    data_path = st.sidebar.text_input("Path to bundled GeoDataFrame", "bundled_routes.geojson")
-    if not os.path.exists(data_path):
-        st.sidebar.error(f"File not found: {data_path}")
-        st.stop()
+    # 1) load your bundled data (no text input needed)
+    try:
+        gdf = load_bundled_routes()
+    except FileNotFoundError as e:
+        st.error(str(e))
+        return
     
-    gdf = load_bundled(data_path)
-    
-    # 2) Category filter
-    all_cats = list(gdf['category'].unique())
-    selected = st.sidebar.multiselect("Filter by category", all_cats, default=all_cats)
+    # 2) filter by category
+    cats = list(gdf['category'].unique())
+    selected = st.multiselect("Filter Categories", cats, default=cats)
     filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
-    
-    st.sidebar.markdown(f"👉 {len(filtered)} / {len(gdf)} edges selected")
-    
-    # 3) Animation parameters
+    st.write(f"Showing {len(filtered)} / {len(gdf)} edges")
+
+    # 3) animation controls
     fps = st.sidebar.slider("Frames per second", 1, 30, 10)
     dpi = st.sidebar.slider("Output DPI", 50, 200, 100)
-    
-    if st.sidebar.button("🎬 Generate Animation"):
-        with st.spinner("Rendering GIF... this may take a moment"):
-            buf = create_animation(filtered, fps=fps, dpi=dpi)
-            st.image(buf, caption="Edge‐bundled routes animation", use_column_width=True)
+
+    if st.button("🎬 Generate Edge Animation"):
+        with st.spinner("Rendering GIF…"):
+            buf = create_edge_animation(filtered, fps=fps, dpi=dpi)
+            st.image(buf, caption="Edge-bundled flows", use_column_width=True)
 
 def page_carrying_capacity():
     st.title("Carrying Capacity")
