@@ -12,8 +12,6 @@ from folium import IFrame
 from streamlit.components.v1 import html as st_html
 from pathlib import Path
 import numpy as np
-import io
-import os
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 
@@ -130,12 +128,6 @@ def load_bundled_routes():
     raise FileNotFoundError(
         f"Could not find 'bundled_routes.parquet' in {candidates}"
     )
-
-def load_bundled_routes(path: str = "bundled_routes.parquet") -> gpd.GeoDataFrame:
-    """
-    Load your pre-bundled edges from a GeoParquet.
-    """
-    return gpd.read_parquet(path, engine="pyarrow")
 
 data = load_data()
 
