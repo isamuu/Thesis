@@ -414,55 +414,60 @@ def page_tourism_dynamics():
         """
         Manually build an in-memory GIF by capturing each frame from the Matplotlib canvas.
         """
-        # 1) Prepare sequences
-        paths = [np.array(line.coords) for line in gdf.geometry]
-        cats  = gdf['category'].astype("category")
-        visits = gdf['visits'].values
-    
-        # 2) Colormap and linewidth
-        cmap = plt.get_cmap("tab10")
-        cat_colors = {c: cmap(i) for i, c in enumerate(cats.cat.categories)}
-        lw = np.interp(visits, [visits.min(), visits.max()], [0.5, 3.0])
-    
-        # 3) Set up figure
-        fig, ax = plt.subplots(figsize=(6,6))
-        fig.patch.set_facecolor('black')
-        ax.set_facecolor('black')
-        ax.axis('off')
-        xs = np.concatenate([p[:,0] for p in paths])
-        ys = np.concatenate([p[:,1] for p in paths])
-        pad = 0.01
-        ax.set_xlim(xs.min() - pad, xs.max() + pad)
-        ax.set_ylim(ys.min() - pad, ys.max() + pad)
-    
-        # 4) Capture frames
-        frames = []
-        for i, p in enumerate(paths):
-            ax.plot(p[:,0], p[:,1],
-                    color=cat_colors[gdf['category'].iloc[i]],
-                    lw=lw[i], alpha=0.8)
-            fig.canvas.draw()
-            # grab the RGBA buffer from the figure
-            w, h = fig.canvas.get_width_height()
-            buf = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-            buf = buf.reshape((h, w, 3))
-            frames.append(Image.fromarray(buf))
-    
-        # 5) Save to GIF in-memory
-        gif_buf = io.BytesIO()
-        # duration per frame in milliseconds:
-        duration = int(1000 / fps)
-        frames[0].save(
-            gif_buf,
-            format='GIF',
-            save_all=True,
-            append_images=frames[1:],
-            loop=0,
-            duration=duration
+        # 1) Prepare paths and styling
+    paths = [np.array(line.coords) for line in gdf.geometry]
+    cats  = gdf['category'].astype("category")
+    visits = gdf['visits'].values
+
+    cmap = plt.get_cmap("tab10")
+    cat_colors = {c: cmap(i) for i, c in enumerate(cats.cat.categories)}
+    lw = np.interp(visits, [visits.min(), visits.max()], [0.5, 3.0])
+
+    # 2) Set up a black figure
+    fig, ax = plt.subplots(figsize=(6,6))
+    fig.patch.set_facecolor('black')
+    ax.set_facecolor('black')
+    ax.axis('off')
+    xs = np.concatenate([p[:,0] for p in paths])
+    ys = np.concatenate([p[:,1] for p in paths])
+    pad = 0.01
+    ax.set_xlim(xs.min() - pad, xs.max() + pad)
+    ax.set_ylim(ys.min() - pad, ys.max() + pad)
+
+    # 3) Plot each edge and capture PNG frame
+    frames = []
+    for i, p in enumerate(paths):
+        ax.plot(
+            p[:,0], p[:,1],
+            color=cat_colors[gdf['category'].iloc[i]],
+            lw=lw[i], alpha=0.8
         )
-        gif_buf.seek(0)
-        plt.close(fig)
-        return gif_buf
+        buf_png = io.BytesIO()
+        fig.savefig(
+            buf_png,
+            format='png',
+            facecolor=fig.get_facecolor(),
+            bbox_inches='tight',
+            pad_inches=0
+        )
+        buf_png.seek(0)
+        frame = Image.open(buf_png).convert('RGB')
+        frames.append(frame)
+
+    # 4) Assemble into GIF
+    gif_buf = io.BytesIO()
+    duration = int(1000 / fps)  # ms per frame
+    frames[0].save(
+        gif_buf,
+        format='GIF',
+        save_all=True,
+        append_images=frames[1:],
+        loop=0,
+        duration=duration
+    )
+    gif_buf.seek(0)
+    plt.close(fig)
+    return gif_buf
     
     # -------------------------------------------------------------------
     st.title("Edge‐Bundled Routes Animation")
