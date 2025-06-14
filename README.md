@@ -1,2 +1,2 @@
-![Alt text](Thesis/Images/cover github.png)
+![Alt text](Thesis/Images/cover_github.png)
 Work in progress
