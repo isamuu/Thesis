@@ -482,11 +482,10 @@ def page_tourism_dynamics():
 
     # 3) animation controls
     fps = st.sidebar.slider("Frames per second", 1, 30, 10)
-    dpi = st.sidebar.slider("Output DPI", 50, 200, 100)
 
     if st.button("🎬 Generate Edge Animation"):
         with st.spinner("Rendering GIF…"):
-            buf = create_animation(filtered, fps=fps, dpi=dpi)
+            buf = create_animation(filtered, fps=fps)
             st.image(buf, caption="Edge-bundled flows", use_column_width=True)
 
 def page_carrying_capacity():
