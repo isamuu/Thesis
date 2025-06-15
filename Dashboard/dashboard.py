@@ -434,12 +434,16 @@ def page_tourism_dynamics():
         ax.set_facecolor('black')
         ax.axis('off')
     
-        # 4) Zoom to Amsterdam extent + small padding
-        xmin, ymin, xmax, ymax = gdf_vis.total_bounds
-        padx = (xmax - xmin) * 0.02
-        pady = (ymax - ymin) * 0.02
-        ax.set_xlim(xmin - padx, xmax + padx)
-        ax.set_ylim(ymin - pady, ymax + pady)
+       
+        # 4) Zoom to a fixed Amsterdam bbox (lon/lat 4.68–5.08, 52.28–52.44)
+        from shapely.geometry import box
+        # define in WGS84
+        am_bbox = box(4.68, 52.28, 5.08, 52.44)
+        # reproject to WebMercator (same CRS as gdf_vis)
+        am_geo = gpd.GeoSeries([am_bbox], crs="EPSG:4326").to_crs(gdf_vis.crs)
+        xmin, ymin, xmax, ymax = am_geo.total_bounds
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
     
         # 5) Add dark basemap
         ctx.add_basemap(
