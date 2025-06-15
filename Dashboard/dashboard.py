@@ -365,42 +365,41 @@ def page_overtourism():
                     st.write(f"- {s}")
 
 def page_tourism_dynamics():
+    def page_tourism_dynamics():
     st.title("Tourism Dynamics")
     st.markdown("""
     **What it’s about**  
-    Exploring spatio-temporal flows of tourists via a continuous “pressure” metric derived from Google Maps Popular Times and review counts.
-
-    **Analysis performed**  
-    - ...  
+    Exploring spatio‐temporal flows…
     """)
 
-    # — Filters —
-    st.subheader("Filters")
-    # 1) Category filter
+    # — Category filter with three-column checkboxes — 
+    st.sidebar.subheader("Filter Categories")
     categories = sorted(data['category'].unique())
-    selected_cats = st.multiselect(
-        "Select Category",
-        categories,
-        default=categories
-    )
+    cols = st.sidebar.columns(3)
 
-    # 2) Day & Hour filters (only show days present in the selected categories)
+    selected_cats = []
+    for idx, cat in enumerate(categories):
+        # rotate through the three sidebar columns
+        col = cols[idx % 3]
+        if col.checkbox(cat, value=True, key=f"td_cat_{idx}"):
+            selected_cats.append(cat)
+
+    # — Day & Hour filters —
     filtered_for_days = data[data['category'].isin(selected_cats)]
     unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
-
-    col1, col2 = st.columns(2)
-    with col1:
+    col3, col4 = st.columns(2)
+    with col3:
         selected_day = st.selectbox(
             "Select Day",
             unique_days,
             format_func=lambda d: d.strftime("%A")
         )
-    with col2:
+    with col4:
         selected_hour = st.slider("Select Hour", 0, 23, 0)
 
     selected_dt = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
 
-    # — Data subset & map —
+    # — Subset & map —
     subset = data[
         (data['category'].isin(selected_cats)) &
         (data['datetime'] == selected_dt)
