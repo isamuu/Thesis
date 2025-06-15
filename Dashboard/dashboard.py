@@ -368,61 +368,64 @@ def page_tourism_dynamics():
     st.title("Tourism Dynamics")
     st.markdown("""
     **What it’s about**  
-    Exploring spatio‐temporal flows…
+    Exploring spatio-temporal flows of tourists via a continuous “pressure” metric derived from Google Maps Popular Times and review counts.
     """)
 
-    # — Category filter with three-column checkboxes — 
-    st.sidebar.subheader("Filter Categories")
-    categories = sorted(data['category'].unique())
-    cols = st.columns(3)
+    # — Top layout: filters on the left, map on the right —
+    filter_col, map_col = st.columns([1, 3])
 
-    selected_cats = []
-    for idx, cat in enumerate(categories):
-        # rotate through the three sidebar columns
-        col = cols[idx % 3]
-        if col.checkbox(cat, value=True, key=f"td_cat_{idx}"):
-            selected_cats.append(cat)
+    # 1) FILTER PANEL
+    with filter_col:
+        st.subheader("Filters")
 
-    # — Day & Hour filters —
-    filtered_for_days = data[data['category'].isin(selected_cats)]
-    unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
-    col3, col4 = st.columns(2)
-    with col3:
+        # a) Category — 3-column checkboxes
+        categories = sorted(data['category'].unique())
+        chk_cols = st.columns(3)
+        selected_cats = []
+        for idx, cat in enumerate(categories):
+            c = chk_cols[idx % 3]
+            if c.checkbox(cat, value=True, key=f"dyn_cat_{idx}"):
+                selected_cats.append(cat)
+
+        # b) Day selector
+        filtered_for_days = data[data['category'].isin(selected_cats)]
+        unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
         selected_day = st.selectbox(
-            "Select Day",
+            "Day",
             unique_days,
             format_func=lambda d: d.strftime("%A")
         )
-    with col4:
-        selected_hour = st.slider("Select Hour", 0, 23, 0)
 
-    selected_dt = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
+        # c) Hour slider
+        selected_hour = st.slider("Hour", 0, 23, 0)
+        selected_dt = datetime.datetime.combine(selected_day,
+                                                datetime.time(selected_hour))
 
-    # — Subset & map —
-    subset = data[
-        (data['category'].isin(selected_cats)) &
-        (data['datetime'] == selected_dt)
-    ]
+    # 2) MAP PANEL
+    with map_col:
+        st.subheader("Tourist Pressure Map")
+        subset = data[
+            (data['category'].isin(selected_cats)) &
+            (data['datetime'] == selected_dt)
+        ]
+        if not subset.empty:
+            view = pdk.ViewState(
+                latitude=subset['lat'].mean(),
+                longitude=subset['lon'].mean(),
+                zoom=12, pitch=0
+            )
+            layer = pdk.Layer(
+                "HeatmapLayer",
+                data=subset,
+                get_position="[lon, lat]",
+                get_weight="pressure",
+                radiusPixels=60
+            )
+            st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view))
+        else:
+            st.info("No data for that time/category combination.")
 
-    st.subheader("Tourist Pressure Map")
-    if not subset.empty:
-        view = pdk.ViewState(
-            latitude=subset['lat'].mean(),
-            longitude=subset['lon'].mean(),
-            zoom=12, pitch=0
-        )
-        layer = pdk.Layer(
-            "HeatmapLayer",
-            data=subset,
-            get_position="[lon, lat]",
-            get_weight="pressure",
-            radiusPixels=60
-        )
-        st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view))
-    else:
-        st.info("No data for this time & category selection.")
-
-    # — Pressure Over Time — (also filtered by category)
+    # — Full-width time series below —
     st.subheader("Pressure Over Time")
     ts_data = data[data['category'].isin(selected_cats)]
     pressure_ts = (
