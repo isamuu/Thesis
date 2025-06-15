@@ -367,9 +367,20 @@ def page_overtourism():
 def page_tourism_dynamics():
     st.title("Tourism Dynamics")
     st.markdown("""
-    **What it’s about**  
-    Exploring spatio-temporal flows of tourists via a continuous “pressure” metric derived from Google Maps Popular Times and review counts.
+    **How to Explore Tourist Pressure**
+    
+    Use the panel on the left to filter and the map/time‐series on the right will update instantly:
+    
+    - **Categories**  
+      Toggle one or more attraction types (e.g. Dining, Activities, Shops) to focus on specific flows.
+    
+    - **Day & Hour**  
+      Pick a day of the week and hour of the day to see when and where pressure peaks.
+    
+    The **Tourist Pressure Map** renders a real‐time heatmap of aggregated “pressure” values at each location.  
+    Below, **Pressure Over Time** shows the average pressure across your selected categories for every timestamp—so you can spot daily or weekly rhythms.
     """)
+
 
     # — Top layout: filters on the left, map on the right —
     filter_col, map_col = st.columns([1, 3])
@@ -523,7 +534,22 @@ def page_tourism_dynamics():
     
     # -------------------------------------------------------------------
     st.title("Edge‐Bundled Routes Animation")
+    st.markdown("""
+    **How to View Bundled Tourist Flows**
     
+    This animation exposes the major corridors tourists follow by grouping (bundling) individual paths:
+    
+    1. **Category Filters**  
+       Check the boxes to include only the types of trips you care about (e.g. Dining & Cafes, Activities, Cannabisshop).
+    
+    2. **Animation Speed**  
+       Use the FPS slider to slow down or speed up the build-up of routes.
+    
+    3. **Generate**  
+       Click **Generate Edge Animation** to render the GIF. Each frame draws a batch of bundled edges, revealing the dominant travel corridors through Amsterdam.
+    
+    Use the final animation to identify high-traffic pathways, plan detours, or understand overall flow structure in the city.
+    """)
     # 1) load your bundled data (no text input needed)
     try:
         gdf = load_bundled_routes()
