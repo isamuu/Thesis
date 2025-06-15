@@ -365,7 +365,6 @@ def page_overtourism():
                     st.write(f"- {s}")
 
 def page_tourism_dynamics():
-    def page_tourism_dynamics():
     st.title("Tourism Dynamics")
     st.markdown("""
     **What it’s about**  
@@ -434,6 +433,7 @@ def page_tourism_dynamics():
         .set_index('datetime')
     )
     st.line_chart(pressure_ts)
+    
 
     def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10) -> bytes:
         """
