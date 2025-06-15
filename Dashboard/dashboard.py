@@ -507,9 +507,12 @@ def page_tourism_dynamics():
     # 2) filter by category
     st.markdown("**Filter Categories**")
     categories = sorted(gdf['category'].unique())
+    col1, col2 = st.columns(2)
     selected = []
-    for cat in categories:
-        if st.checkbox(cat, value=True):
+    for idx, cat in enumerate(categories):
+        # alternate between the two columns
+        container = col1 if idx % 2 == 0 else col2
+        if container.checkbox(cat, value=True, key=f"cat_{idx}"):
             selected.append(cat)
     filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
 
