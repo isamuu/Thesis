@@ -446,8 +446,7 @@ def page_tourism_dynamics():
             ax,
             source=ctx.providers.CartoDB.DarkMatter,
             crs=gdf_vis.crs.to_string(),
-            zoom=12,
-            alpha=0.4
+            zoom=12
         )
     
         # 6) Draw in batches for speed
