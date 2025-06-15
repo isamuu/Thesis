@@ -505,13 +505,16 @@ def page_tourism_dynamics():
         return
     
     # 2) filter by category
-    cats = list(gdf['category'].unique())
-    selected = st.multiselect("Filter Categories", cats, default=cats)
+    st.sidebar.markdown("**Filter Categories**")
+    categories = sorted(gdf['category'].unique())
+    selected = []
+    for cat in categories:
+        if st.sidebar.checkbox(cat, value=True):
+            selected.append(cat)
     filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
-    st.write(f"Showing {len(filtered)} / {len(gdf)} edges")
 
     # 3) animation controls
-    fps = st.sidebar.slider("Frames per second", 1, 30, 10)
+    fps = st.slider("Frames per second", 1, 30, 10)
 
     if st.button("🎬 Generate Edge Animation"):
         with st.spinner("Rendering GIF…"):
