@@ -435,7 +435,7 @@ def page_tourism_dynamics():
         ax.set_ylim(ys.min() - pad, ys.max() + pad)
     
         # 3) Plot each edge and capture PNG frame
-        chunk_size = 20
+        chunk_size = 100
         n_edges = len(paths)
         n_frames = int(np.ceil(n_edges / chunk_size))
         frames = []
