@@ -447,7 +447,7 @@ def page_tourism_dynamics():
             for i in range(start, end):
                 p   = paths[i]
                 col = cat_colors[gdf['category'].iloc[i]]
-                ax.plot(p[:,0], p[:,1], color=col, lw=lw[i], alpha=0.8)
+                ax.plot(p[:,0], p[:,1], color=col, lw=lw[i], alpha=0.1)
                 
             buf_png = io.BytesIO()
             fig.savefig(
