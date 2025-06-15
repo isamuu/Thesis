@@ -16,6 +16,7 @@ import matplotlib.pyplot as plt
 from PIL import Image
 import os
 import io
+import contextily as ctx
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
