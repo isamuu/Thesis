@@ -12,3 +12,4 @@ pyarrow
 numpy
 matplotlib
 pillow
+contextily
