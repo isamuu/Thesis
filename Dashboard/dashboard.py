@@ -435,13 +435,20 @@ def page_tourism_dynamics():
         ax.set_ylim(ys.min() - pad, ys.max() + pad)
     
         # 3) Plot each edge and capture PNG frame
+        chunk_size = 20
+        n_edges = len(paths)
+        n_frames = int(np.ceil(n_edges / chunk_size))
         frames = []
-        for i, p in enumerate(paths):
-            ax.plot(
-                p[:,0], p[:,1],
-                color=cat_colors[gdf['category'].iloc[i]],
-                lw=lw[i], alpha=0.1
-            )
+        
+        for frame_idx in range(n_frames):
+            start = frame_idx * chunk_size
+            end   = min(start + chunk_size, n_edges)
+            # draw the next batch of edges
+            for i in range(start, end):
+                p   = paths[i]
+                col = cat_colors[gdf['category'].iloc[i]]
+                ax.plot(p[:,0], p[:,1], color=col, lw=lw[i], alpha=0.8)
+                
             buf_png = io.BytesIO()
             fig.savefig(
                 buf_png,
