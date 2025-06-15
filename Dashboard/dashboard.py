@@ -505,7 +505,7 @@ def page_tourism_dynamics():
         return
     
     # 2) filter by category
-    st.sidebar.markdown("**Filter Categories**")
+    st.radio("**Filter Categories**")
     categories = sorted(gdf['category'].unique())
     selected = []
     for cat in categories:
