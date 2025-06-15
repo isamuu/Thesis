@@ -419,76 +419,76 @@ def page_tourism_dynamics():
         else:
             gdf_vis = gdf.copy()
         # 2) Build coordinate lists & styling
-    paths  = [np.array(line.coords) for line in gdf_vis.geometry]
-    cats   = gdf_vis['category'].astype("category")
-    visits = gdf_vis['visits'].values
-
-    cmap      = plt.get_cmap("tab10")
-    cat_colors = {c: cmap(i) for i, c in enumerate(cats.cat.categories)}
-    lw        = np.interp(visits, [visits.min(), visits.max()], [0.5, 3.0])
-
-    # 3) Set up figure & axes
-    fig, ax = plt.subplots(figsize=(6,6), dpi=100)
-    fig.patch.set_facecolor('black')
-    ax.set_facecolor('black')
-    ax.axis('off')
-
-    # 4) Zoom to Amsterdam extent + small padding
-    xmin, ymin, xmax, ymax = gdf_vis.total_bounds
-    padx = (xmax - xmin) * 0.02
-    pady = (ymax - ymin) * 0.02
-    ax.set_xlim(xmin - padx, xmax + padx)
-    ax.set_ylim(ymin - pady, ymax + pady)
-
-    # 5) Add dark basemap
-    ctx.add_basemap(
-        ax,
-        source=ctx.providers.CartoDB.DarkMatter,
-        crs=gdf_vis.crs.to_string(),
-        zoom=12,
-        alpha=0.4
-    )
-
-    # 6) Draw in batches for speed
-    chunk_size = 100
-    n_edges    = len(paths)
-    n_frames   = int(np.ceil(n_edges / chunk_size))
-    frames     = []
-
-    for fidx in range(n_frames):
-        s = fidx * chunk_size
-        e = min(s + chunk_size, n_edges)
-        for i in range(s, e):
-            p   = paths[i]
-            col = cat_colors[gdf_vis['category'].iloc[i]]
-            ax.plot(p[:,0], p[:,1], color=col, lw=lw[i], alpha=0.1)
-
-        # capture PNG
-        buf_png = io.BytesIO()
-        fig.savefig(
-            buf_png,
-            format='png',
-            facecolor=fig.get_facecolor(),
-            bbox_inches='tight',
-            pad_inches=0
+        paths  = [np.array(line.coords) for line in gdf_vis.geometry]
+        cats   = gdf_vis['category'].astype("category")
+        visits = gdf_vis['visits'].values
+    
+        cmap      = plt.get_cmap("tab10")
+        cat_colors = {c: cmap(i) for i, c in enumerate(cats.cat.categories)}
+        lw        = np.interp(visits, [visits.min(), visits.max()], [0.5, 3.0])
+    
+        # 3) Set up figure & axes
+        fig, ax = plt.subplots(figsize=(6,6), dpi=100)
+        fig.patch.set_facecolor('black')
+        ax.set_facecolor('black')
+        ax.axis('off')
+    
+        # 4) Zoom to Amsterdam extent + small padding
+        xmin, ymin, xmax, ymax = gdf_vis.total_bounds
+        padx = (xmax - xmin) * 0.02
+        pady = (ymax - ymin) * 0.02
+        ax.set_xlim(xmin - padx, xmax + padx)
+        ax.set_ylim(ymin - pady, ymax + pady)
+    
+        # 5) Add dark basemap
+        ctx.add_basemap(
+            ax,
+            source=ctx.providers.CartoDB.DarkMatter,
+            crs=gdf_vis.crs.to_string(),
+            zoom=12,
+            alpha=0.4
         )
-        buf_png.seek(0)
-        frames.append(Image.open(buf_png).convert('RGB'))
-
-    # 7) Assemble GIF
-    gif_buf = io.BytesIO()
-    duration = int(1000 / fps)
-    frames[0].save(
-        gif_buf,
-        format='GIF',
-        save_all=True,
-        append_images=frames[1:],
-        loop=0,
-        duration=duration
-    )
-    gif_buf.seek(0)
-    plt.close(fig)
-    return gif_buf
+    
+        # 6) Draw in batches for speed
+        chunk_size = 100
+        n_edges    = len(paths)
+        n_frames   = int(np.ceil(n_edges / chunk_size))
+        frames     = []
+    
+        for fidx in range(n_frames):
+            s = fidx * chunk_size
+            e = min(s + chunk_size, n_edges)
+            for i in range(s, e):
+                p   = paths[i]
+                col = cat_colors[gdf_vis['category'].iloc[i]]
+                ax.plot(p[:,0], p[:,1], color=col, lw=lw[i], alpha=0.1)
+    
+            # capture PNG
+            buf_png = io.BytesIO()
+            fig.savefig(
+                buf_png,
+                format='png',
+                facecolor=fig.get_facecolor(),
+                bbox_inches='tight',
+                pad_inches=0
+            )
+            buf_png.seek(0)
+            frames.append(Image.open(buf_png).convert('RGB'))
+    
+        # 7) Assemble GIF
+        gif_buf = io.BytesIO()
+        duration = int(1000 / fps)
+        frames[0].save(
+            gif_buf,
+            format='GIF',
+            save_all=True,
+            append_images=frames[1:],
+            loop=0,
+            duration=duration
+        )
+        gif_buf.seek(0)
+        plt.close(fig)
+        return gif_buf
     
     # -------------------------------------------------------------------
     st.title("Edge‐Bundled Routes Animation")
