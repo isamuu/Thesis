@@ -368,20 +368,32 @@ def page_tourism_dynamics():
     st.title("Tourism Dynamics")
     st.markdown("""
     **What it’s about**  
-    Exploring spatio‐temporal flows of tourists via a continuous “pressure” metric derived from Google Maps Popular Times and review counts.
+    Exploring spatio-temporal flows of tourists via a continuous “pressure” metric derived from Google Maps Popular Times and review counts.
 
     **Analysis performed**  
     - ...  
     """)
-    st.subheader("Tourist Pressure Map")
+
     # — Filters —
-    unique_days = sorted(data['datetime'].dt.date.unique())
+    st.subheader("Filters")
+    # 1) Category filter
+    categories = sorted(data['category'].unique())
+    selected_cats = st.multiselect(
+        "Select Category",
+        categories,
+        default=categories
+    )
+
+    # 2) Day & Hour filters (only show days present in the selected categories)
+    filtered_for_days = data[data['category'].isin(selected_cats)]
+    unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
+
     col1, col2 = st.columns(2)
     with col1:
         selected_day = st.selectbox(
             "Select Day",
             unique_days,
-            format_func=lambda d: d.strftime("%A")  # show “Monday”, “Tuesday”, etc.
+            format_func=lambda d: d.strftime("%A")
         )
     with col2:
         selected_hour = st.slider("Select Hour", 0, 23, 0)
@@ -389,7 +401,12 @@ def page_tourism_dynamics():
     selected_dt = datetime.datetime.combine(selected_day, datetime.time(selected_hour))
 
     # — Data subset & map —
-    subset = data[data['datetime'] == selected_dt]
+    subset = data[
+        (data['category'].isin(selected_cats)) &
+        (data['datetime'] == selected_dt)
+    ]
+
+    st.subheader("Tourist Pressure Map")
     if not subset.empty:
         view = pdk.ViewState(
             latitude=subset['lat'].mean(),
@@ -405,10 +422,18 @@ def page_tourism_dynamics():
         )
         st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view))
     else:
-        st.info("No data for this time.")
+        st.info("No data for this time & category selection.")
 
+    # — Pressure Over Time — (also filtered by category)
     st.subheader("Pressure Over Time")
-    pressure_ts = data.groupby('datetime')['pressure'].mean().reset_index().set_index('datetime')
+    ts_data = data[data['category'].isin(selected_cats)]
+    pressure_ts = (
+        ts_data
+        .groupby('datetime')['pressure']
+        .mean()
+        .reset_index()
+        .set_index('datetime')
+    )
     st.line_chart(pressure_ts)
 
     def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10) -> bytes:
