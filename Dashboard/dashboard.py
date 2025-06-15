@@ -374,7 +374,7 @@ def page_tourism_dynamics():
     # — Category filter with three-column checkboxes — 
     st.sidebar.subheader("Filter Categories")
     categories = sorted(data['category'].unique())
-    cols = st.sidebar.columns(3)
+    cols = st.columns(3)
 
     selected_cats = []
     for idx, cat in enumerate(categories):
