@@ -509,7 +509,7 @@ def page_tourism_dynamics():
     categories = sorted(gdf['category'].unique())
     selected = []
     for cat in categories:
-        if st.sidebar.checkbox(cat, value=True):
+        if st.checkbox(cat, value=True):
             selected.append(cat)
     filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
 
