@@ -649,19 +649,18 @@ def page_carrying_capacity():
 
 def page_finding_detour():
     st.title("Finding a DeTour")
+    st.title("Coming Soon 🚧")
     st.markdown("""
-    **What it’s about**  
-    Selecting & delineating a “DeTour” corridor through under‐utilised districts to redistribute flows.
-
-    **Analysis performed**  
-    - ... 
+    We're still working on this part of the dashboard.  
+    Stay tuned for updates—new content will be added here shortly!
     """)
 
 def page_strategising_detour():
     st.title("Strategising a DeTour")
+    st.title("Coming Soon 🚧")
     st.markdown("""
-    **What it’s about**  
-    ...
+    We're still working on this part of the dashboard.  
+    Stay tuned for updates—new content will be added here shortly!
     """)
 
 def page_about():
