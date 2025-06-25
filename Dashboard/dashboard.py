@@ -295,7 +295,7 @@ def page_overtourism():
         st.markdown("""
         *This map shows the percentage of residents in each neighborhood who report experiencing nuisance due to tourism.  
         Darker red tones indicate higher levels of nuisance.*
-        
+         
         """)
         # 1) Base map
         m2 = folium.Map(
