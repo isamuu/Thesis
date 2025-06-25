@@ -136,6 +136,7 @@ data = load_data()
 
 # ——— Page Functions ———
 def page_home():
+    html("""<script>window.scrollTo(0, 0);</script>""", height=0)
     st.title("Welcome to the Overtourism Dashboard")
 
     st.markdown("""
@@ -180,6 +181,7 @@ def page_home():
         st.warning("Image not found: public transport corridor.png")
 
 def page_overtourism():
+    html("""<script>window.scrollTo(0, 0);</script>""", height=0)
     st.title("Overtourism")
     st.markdown("""
     **What it’s about**  
