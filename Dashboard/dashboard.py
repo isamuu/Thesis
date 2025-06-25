@@ -185,15 +185,17 @@ def page_overtourism():
     st.title("Overtourism")
     st.markdown("""
     **What it’s about**  
-    ...
+    Amsterdam is increasingly affected by overtourism. With millions of visitors each year, the city faces growing pressure on its public spaces, cultural fabric, and liveability. Tourism is no longer confined to specific landmarks or high seasons—its presence is felt across neighborhoods and throughout the week.  
+    While strategies have been introduced to manage the flow of tourists, they often treat symptoms rather than structural causes. There is a need to better understand *where*, *when*, and *how* tourism impacts the city.
 
     **Analysis performed**  
-    - ... 
+    To explore this, an analysis was conducted on publicly available texts from local media, neighborhood reports, and complaints. These texts were classified into different types—places, moments, and impacts—and mapped to specific neighborhoods.  
+    A separate dataset was used to measure self-reported nuisance among residents.
 
-    *Key findings*  
-    - Concentrated in the historic centre, spreading outward  
-    - Peaks on Friday/Saturday evenings and holidays  
-    - Erosion of social familiarity & local liveability
+    **Key findings**  
+    - Tourism is still highly concentrated in the historic center, but pressure spreads outward to other neighborhoods  
+    - Activity peaks on Friday and Saturday evenings and around public holidays  
+    - Residents report increasing nuisance, loss of familiarity, and pressure on everyday life  
     """)
     # — Data & Popups —
     media      = load_media_data()
@@ -254,6 +256,10 @@ def page_overtourism():
         caption="% Residents Experiencing Nuisance"
     )
     st.subheader("Places")
+    st.markdown("""
+    *This map shows where overtourism is most often mentioned in local texts and reports.  
+    Darker areas highlight neighborhoods that appear frequently in descriptions of tourist activity. Click on a neighborhood to read sample sentences from the sources.*
+    """)
 
     col1, col2 = st.columns(2)
 
@@ -316,10 +322,19 @@ def page_overtourism():
             height=400,
             scrolling=False
         )
+        st.markdown("""
+        *This map shows the percentage of residents in each neighborhood who report experiencing nuisance due to tourism.  
+        Darker red tones indicate higher levels of nuisance.*
+        """)
+
+    
 
     # — Moments Graphs ——
     st.subheader("Moments")
-    st.markdown("Bars in **blue** are hours/days mentioned in the texts. Hover to read the sentences.")
+    st.markdown("""
+    *The charts below show when tourism-related activity is most often mentioned in texts.  
+    Bars in **blue** highlight hours and days frequently associated with tourist pressure.*
+    """)
     moments = media[media.type == "moment"]
     
     # prepare hours
@@ -391,7 +406,9 @@ def page_overtourism():
 
     # — Impacts Icons ——
     st.subheader("Impacts")
-    st.markdown("Click an icon to read all related sentences.")
+    st.markdown("""
+    *Tourism has a variety of impacts on the city. Click each icon to explore quotes related to nuisance, the economy, or loss of social familiarity.*
+    """)
     impacts = media[media.type == "impact"].groupby("impact_type").sentence.apply(list).to_dict()
     cols = st.columns(3)
     icons = {"nuisance":"😡", "economy":"💰", "familiarity":"🤝"}
