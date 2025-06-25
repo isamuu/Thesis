@@ -149,7 +149,7 @@ def page_home():
     image_path = base / "SCWX2243.jpeg"
 
     if image_path.exists():
-        st.image(Image.open(image_path), use_column_width=True)
+        st.image(Image.open(image_path), use_container_width=True)
     else:
         st.warning("Image not found: SCWX2243.jpeg")
 
@@ -161,7 +161,7 @@ def page_home():
     image_path = base / "dining cafes.png"
 
     if image_path.exists():
-        st.image(Image.open(image_path), use_column_width=True)
+        st.image(Image.open(image_path), use_container_width=True)
     else:
         st.warning("Image not found: dining cafes.png")
 
@@ -175,7 +175,7 @@ def page_home():
     image_path = base / "public transport corridor.png"
 
     if image_path.exists():
-        st.image(Image.open(image_path), use_column_width=True)
+        st.image(Image.open(image_path), use_container_width=True)
     else:
         st.warning("Image not found: public transport corridor.png")
 
