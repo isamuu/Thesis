@@ -638,6 +638,11 @@ def page_tourism_dynamics():
 
 def page_carrying_capacity():
     st.title("Carrying Capacity")
+    st.title("Coming Soon 🚧")
+    st.markdown("""
+    We're still working on this part of the dashboard.  
+    Stay tuned for updates—new content will be added here shortly!
+    """)
     st.markdown("""
     **What it’s about**  
     Assessing how spatial network capacity and land‐use form modify liveability under tourism pressure.
@@ -647,7 +652,6 @@ def page_carrying_capacity():
     - Floor Space Index (FSI), Ground Space Index (GSI), Mixed‐Use Index (MXI)  
     - Moderation analysis: tourist pressure → perceived nuisance, moderated by private/pedestrian/built space  
     """)
-    st.title("Hotel Data Viewer")
 
     # 1) Load & parse geometry
     csv_path = Path(__file__).resolve().parent / "hotels_all_data.csv"
