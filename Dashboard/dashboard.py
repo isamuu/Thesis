@@ -616,10 +616,12 @@ def page_tourism_dynamics():
     categories = sorted(gdf['category'].unique())
     col1, col2 = st.columns(2)
     selected = []
+    selected = []
     for idx, cat in enumerate(categories):
-        # alternate between the two columns
         container = col1 if idx % 2 == 0 else col2
-        if container.checkbox(cat, value=True, key=f"cat_{idx}"):
+        # Only pre-check the first category, uncheck the rest
+        default_checked = True if idx == 0 else False
+        if container.checkbox(cat, value=default_checked, key=f"cat_{idx}"):
             selected.append(cat)
     filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
 
