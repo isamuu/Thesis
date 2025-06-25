@@ -136,18 +136,34 @@ data = load_data()
 
 # ——— Page Functions ———
 def page_home():
+    st.title("Welcome to the Overtourism Dashboard")
+
     st.markdown("""
     **Introduction**  
     Amsterdam is facing increasing pressure from overtourism. With a growing global middle class and low-cost travel options, more people than ever are visiting the city.  
     While tourism brings economic benefits, it also causes serious strain on local life—leading to overcrowded streets, rising nuisance, and an erosion of social cohesion. Despite efforts like crowd control and earlier closing times, the city continues to address only the symptoms, not the deeper causes.
     """)
-    st.image("SCWX2243.jpeg", use_column_width=True)
+    
+    # Resolve path to image
+    base = Path(__file__).resolve().parent
+    image_path = base / "SCWX2243.jpeg"
+
+    if image_path.exists():
+        st.image(Image.open(image_path), use_column_width=True)
+    else:
+        st.warning("Image not found: SCWX2243.jpeg")
 
     st.markdown("""
     **Understanding the Problem**  
     The current strategies lack a systemic view. Overtourism is not just about too many tourists—it's about when and where they move, how the urban fabric absorbs them, and what social thresholds are crossed. Cities like Amsterdam need to move beyond reactive measures and embrace complexity.
     """)
-    st.image("dining cafes.png", use_column_width=True)
+    base = Path(__file__).resolve().parent
+    image_path = base / "dining cafes.png"
+
+    if image_path.exists():
+        st.image(Image.open(image_path), use_column_width=True)
+    else:
+        st.warning("Image not found: dining cafes.png")
 
     st.markdown("""
     **Why This Dashboard**  
@@ -155,7 +171,13 @@ def page_home():
 
     Use the tabs in the top left corner to explore the chapters and see where and when pressure is most intense, how the urban environment shapes this impact, and what strategies can help reimagine tourism for a more livable Amsterdam.
     """)
-    st.image("public transport corridor.png", use_column_width=True)
+    base = Path(__file__).resolve().parent
+    image_path = base / "public transport corridor.png"
+
+    if image_path.exists():
+        st.image(Image.open(image_path), use_column_width=True)
+    else:
+        st.warning("Image not found: public transport corridor.png")
 
 def page_overtourism():
     st.title("Overtourism")
