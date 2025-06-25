@@ -8,7 +8,7 @@ import altair as alt
 import folium
 import branca
 from streamlit_folium import st_folium
-from folium import IFrame
+from folium import IFrame, Choropleth, Marker, LayerControl
 from streamlit.components.v1 import html as st_html
 from pathlib import Path
 import numpy as np
@@ -17,6 +17,7 @@ from PIL import Image
 import os
 import io
 import contextily as ctx
+from folium.plugins import MarkerCluster
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
@@ -646,6 +647,54 @@ def page_carrying_capacity():
     - Floor Space Index (FSI), Ground Space Index (GSI), Mixed‐Use Index (MXI)  
     - Moderation analysis: tourist pressure → perceived nuisance, moderated by private/pedestrian/built space  
     """)
+    st.title("Hotel Data Viewer")
+
+    # 1) Load & parse geometry
+    csv_path = Path(__file__).resolve().parent / "hotels_all_data.csv"
+    df = pd.read_csv(csv_path)
+    df["geometry"] = df["geometry"].apply(wkt.loads)
+    gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
+
+    # 2) Extract coordinates for plotting
+    gdf["lat"] = gdf.geometry.y
+    gdf["lon"] = gdf.geometry.x
+
+    # 3) Choose variable to visualize
+    numeric_cols = gdf.select_dtypes(include='number').columns.tolist()
+    show_cols = [col for col in numeric_cols if col not in ['lat', 'lon'] and gdf[col].nunique() > 5]
+
+    if not show_cols:
+        st.warning("No suitable numeric columns available for visualization.")
+        return
+
+    selected_var = st.selectbox("Choose variable to display:", show_cols)
+
+    # 4) Setup Folium map
+    center = [gdf["lat"].mean(), gdf["lon"].mean()]
+    m = folium.Map(location=center, zoom_start=12, tiles="CartoDB positron")
+    cluster = MarkerCluster().add_to(m)
+
+    # Normalize selected variable values for coloring
+    vmin, vmax = gdf[selected_var].min(), gdf[selected_var].max()
+
+    colormap = folium.LinearColormap(["green", "yellow", "red"], vmin=vmin, vmax=vmax)
+    colormap.caption = selected_var
+    colormap.add_to(m)
+
+    for _, row in gdf.iterrows():
+        value = row[selected_var]
+        popup = f"<b>{row.get('name', 'Unnamed')}</b><br>{selected_var}: {value:.2f}"
+        folium.CircleMarker(
+            location=(row["lat"], row["lon"]),
+            radius=5,
+            color=colormap(value),
+            fill=True,
+            fill_opacity=0.7,
+            popup=popup
+        ).add_to(cluster)
+
+    # 5) Display
+    st_folium(m, width=900, height=600)
 
 def page_finding_detour():
     st.title("Finding a DeTour")
