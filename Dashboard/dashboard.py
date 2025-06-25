@@ -256,16 +256,17 @@ def page_overtourism():
         caption="% Residents Experiencing Nuisance"
     )
     st.subheader("Places")
-    st.markdown("""
-    *This map shows where overtourism is most often mentioned in local texts and reports.  
-    Darker areas highlight neighborhoods that appear frequently in descriptions of tourist activity. Click on a neighborhood to read sample sentences from the sources.*
-    """)
+    
 
     col1, col2 = st.columns(2)
 
     
     # Left: Overtourism Places map
     with col1:
+        st.markdown("""
+        *This map shows where overtourism is most often mentioned in local texts and reports.  
+        Darker areas highlight neighborhoods that appear frequently in descriptions of tourist activity. Click on a neighborhood to read sample sentences from the sources.*
+        """)
         m1 = folium.Map(
             location=[52.37, 4.90],
             zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
@@ -291,6 +292,10 @@ def page_overtourism():
 
     # Right: Tourism Nuisance continuous map (white → dark red, semi-transparent)
     with col2:
+        st.markdown("""
+        *This map shows the percentage of residents in each neighborhood who report experiencing nuisance due to tourism.  
+        Darker red tones indicate higher levels of nuisance.*
+        """)
         # 1) Base map
         m2 = folium.Map(
             location=[52.37, 4.90],
@@ -322,10 +327,7 @@ def page_overtourism():
             height=400,
             scrolling=False
         )
-        st.markdown("""
-        *This map shows the percentage of residents in each neighborhood who report experiencing nuisance due to tourism.  
-        Darker red tones indicate higher levels of nuisance.*
-        """)
+        
 
     
 
