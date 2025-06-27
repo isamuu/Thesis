@@ -139,7 +139,16 @@ data = load_data()
 def page_home():
     st_html("""<script>window.scrollTo(0, 0);</script>""", height=0)
     st.title("Welcome to the Overtourism Dashboard")
+    
+    base = Path(__file__).resolve().parent
+    image_path = base / "new Title heatmap.png"
 
+    if image_path.exists():
+        st.image(Image.open(image_path), use_container_width=True)
+    else:
+        st.warning("Image not found: new Title heatmap.png")
+
+    
     st.markdown("""
     **Introduction**  
     Amsterdam is facing increasing pressure from overtourism. With a growing global middle class and low-cost travel options, more people than ever are visiting the city.  
