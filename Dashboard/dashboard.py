@@ -138,7 +138,6 @@ data = load_data()
 # ——— Page Functions ———
 def page_home():
     st_html("""<script>window.scrollTo(0, 0);</script>""", height=0)
-    st.title("Welcome to the Overtourism Dashboard")
     
     base = Path(__file__).resolve().parent
     image_path = base / "new Title heatmap.png"
