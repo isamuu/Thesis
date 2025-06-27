@@ -155,17 +155,22 @@ def page_home():
     else:
         st.warning("Image not found: SCWX2243.jpeg")
 
-    st.markdown("""
-    **Understanding the Problem**  
-    The current strategies lack a systemic view. Overtourism is not just about too many tourists—it's about when and where they move, how the urban fabric absorbs them, and what social thresholds are crossed. Cities like Amsterdam need to move beyond reactive measures and embrace complexity.
-    """)
-    base = Path(__file__).resolve().parent
-    image_path = base / "dining cafes.png"
+        # Create two columns
+    col1, col2 = st.columns([1.5, 1])  # Adjust width ratio as needed
 
-    if image_path.exists():
-        st.image(Image.open(image_path), use_container_width=True)
-    else:
-        st.warning("Image not found: dining cafes.png")
+    with col1:
+        st.markdown("""
+        **Understanding the Problem**  
+        The current strategies lack a systemic view. Overtourism is not just about too many tourists—it's about when and where they move, how the urban fabric absorbs them, and what social thresholds are crossed. Cities like Amsterdam need to move beyond reactive measures and embrace complexity.
+        """)
+
+    with col2:
+        base = Path(__file__).resolve().parent
+        image_path = base / "dining cafes.png"
+        if image_path.exists():
+            st.image(Image.open(image_path), use_container_width=True)
+        else:
+            st.warning("Image not found: dining cafes.png")
 
     st.markdown("""
     **Why This Dashboard**  
