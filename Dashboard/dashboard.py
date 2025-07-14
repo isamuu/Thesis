@@ -163,6 +163,93 @@ def page_home():
     else:
         st.warning("Image not found: SCWX2243.jpeg")
 
+    st.markdown("""
+    **How to Explore Tourist Pressure**
+    
+    Use the panel on the left to filter and the map/time‐series on the right will update instantly:
+    
+    - **Categories**  
+      Toggle one or more attraction types (e.g. Dining, Activities, Shops) to focus on specific flows.
+    
+    - **Day & Hour**  
+      Pick a day of the week and hour of the day to see when and where pressure peaks.
+    
+    The **Tourist Pressure Map** renders a real‐time heatmap of aggregated “pressure” values at each location.  
+    Below, **Pressure Over Time** shows the average pressure across your selected categories for every timestamp—so you can spot daily or weekly rhythms.
+    """)
+
+
+    # — Top layout: filters on the left, map on the right —
+    filter_col, map_col = st.columns([1, 3])
+
+    # 1) FILTER PANEL
+    with filter_col:
+        st.subheader("Filters")
+
+        # a) Category — 3-column checkboxes
+        categories = sorted(data['category'].unique())
+        chk_cols = st.columns(3)
+        selected_cats = []
+        for idx, cat in enumerate(categories):
+            c = chk_cols[idx % 3]
+            if c.checkbox(cat, value=True, key=f"dyn_cat_{idx}"):
+                selected_cats.append(cat)
+
+        # b) Day selector
+        filtered_for_days = data[data['category'].isin(selected_cats)]
+        unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
+        selected_day = st.selectbox(
+            "Day",
+            unique_days,
+            format_func=lambda d: d.strftime("%A")
+        )
+
+        # c) Hour slider
+        selected_hour = st.slider("Hour", 0, 23, 0)
+        selected_dt = datetime.datetime.combine(selected_day,
+                                                datetime.time(selected_hour))
+
+    # 2) MAP PANEL
+    with map_col:
+        st.subheader("Tourist Pressure Map")
+        subset = data[
+            (data['category'].isin(selected_cats)) &
+            (data['datetime'] == selected_dt)
+        ]
+        if not subset.empty:
+            view = pdk.ViewState(
+                latitude=subset['lat'].mean(),
+                longitude=subset['lon'].mean(),
+                zoom=12, pitch=0
+            )
+            layer = pdk.Layer(
+                "HeatmapLayer",
+                data=subset,
+                get_position="[lon, lat]",
+                get_weight="pressure",
+                radiusPixels=60
+            )
+            st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view))
+        else:
+            st.info("No data for that time/category combination.")
+
+    # — Full-width time series below —
+    st.subheader("Pressure Over Time")
+    ts_data = data[data['category'].isin(selected_cats)]
+    pressure_ts = (
+        ts_data
+        .groupby('datetime')['pressure']
+        .mean()
+        .reset_index()
+        .set_index('datetime')
+    )
+    st.line_chart(pressure_ts)
+
+
+
+
+    
+
         # Create two columns
     col1, col2 = st.columns([1.5, 1])  # Adjust width ratio as needed
 
@@ -436,87 +523,7 @@ def page_overtourism():
 
 def page_tourism_dynamics():
     st.title("Tourism Dynamics")
-    st.markdown("""
-    **How to Explore Tourist Pressure**
     
-    Use the panel on the left to filter and the map/time‐series on the right will update instantly:
-    
-    - **Categories**  
-      Toggle one or more attraction types (e.g. Dining, Activities, Shops) to focus on specific flows.
-    
-    - **Day & Hour**  
-      Pick a day of the week and hour of the day to see when and where pressure peaks.
-    
-    The **Tourist Pressure Map** renders a real‐time heatmap of aggregated “pressure” values at each location.  
-    Below, **Pressure Over Time** shows the average pressure across your selected categories for every timestamp—so you can spot daily or weekly rhythms.
-    """)
-
-
-    # — Top layout: filters on the left, map on the right —
-    filter_col, map_col = st.columns([1, 3])
-
-    # 1) FILTER PANEL
-    with filter_col:
-        st.subheader("Filters")
-
-        # a) Category — 3-column checkboxes
-        categories = sorted(data['category'].unique())
-        chk_cols = st.columns(3)
-        selected_cats = []
-        for idx, cat in enumerate(categories):
-            c = chk_cols[idx % 3]
-            if c.checkbox(cat, value=True, key=f"dyn_cat_{idx}"):
-                selected_cats.append(cat)
-
-        # b) Day selector
-        filtered_for_days = data[data['category'].isin(selected_cats)]
-        unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
-        selected_day = st.selectbox(
-            "Day",
-            unique_days,
-            format_func=lambda d: d.strftime("%A")
-        )
-
-        # c) Hour slider
-        selected_hour = st.slider("Hour", 0, 23, 0)
-        selected_dt = datetime.datetime.combine(selected_day,
-                                                datetime.time(selected_hour))
-
-    # 2) MAP PANEL
-    with map_col:
-        st.subheader("Tourist Pressure Map")
-        subset = data[
-            (data['category'].isin(selected_cats)) &
-            (data['datetime'] == selected_dt)
-        ]
-        if not subset.empty:
-            view = pdk.ViewState(
-                latitude=subset['lat'].mean(),
-                longitude=subset['lon'].mean(),
-                zoom=12, pitch=0
-            )
-            layer = pdk.Layer(
-                "HeatmapLayer",
-                data=subset,
-                get_position="[lon, lat]",
-                get_weight="pressure",
-                radiusPixels=60
-            )
-            st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view))
-        else:
-            st.info("No data for that time/category combination.")
-
-    # — Full-width time series below —
-    st.subheader("Pressure Over Time")
-    ts_data = data[data['category'].isin(selected_cats)]
-    pressure_ts = (
-        ts_data
-        .groupby('datetime')['pressure']
-        .mean()
-        .reset_index()
-        .set_index('datetime')
-    )
-    st.line_chart(pressure_ts)
     
 
     def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10) -> bytes:
