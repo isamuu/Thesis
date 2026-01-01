@@ -3,316 +3,225 @@ import pandas as pd
 import geopandas as gpd
 from shapely import wkt
 import pydeck as pdk
+import datetime
 import altair as alt
+import folium
+import branca
+from streamlit_folium import st_folium
+from folium import IFrame, Choropleth, Marker, LayerControl
+from streamlit.components.v1 import html as st_html
 from pathlib import Path
 import numpy as np
+import matplotlib.pyplot as plt
 from PIL import Image
-import matplotlib.cm as cm
+import os
+import io
+import contextily as ctx
+from folium.plugins import MarkerCluster
 
-# ------------------------------------------------------------
-# App config
-# ------------------------------------------------------------
-st.set_page_config(page_title="DeTourism Dashboard", layout="wide")
+st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
-APP_DIR = Path(__file__).resolve().parent
-
-
-def find_file(filename: str) -> Path:
-    """
-    Looks for a file in:
-      1) same folder as dashboard.py
-      2) repo root (parent folder)
-    """
-    candidates = [APP_DIR / filename, APP_DIR.parent / filename]
-    for p in candidates:
-        if p.exists():
-            return p
-    raise FileNotFoundError(f"Could not find '{filename}' in: {candidates}")
-
-
-def safe_image(name: str):
-    """
-    Display an image if present (same folder or parent).
-    """
-    try:
-        p = find_file(name)
-        st.image(Image.open(p), use_container_width=True)
-    except Exception:
-        st.info(f"(Optional image not found: {name})")
-
-
-# ------------------------------------------------------------
-# Data loaders
-# ------------------------------------------------------------
+# ——— Data Loading ———
 @st.cache_data
-def load_pressure_points() -> gpd.GeoDataFrame:
-    """
-    Expects: test_pressure_time_small.csv
-      - geometry: WKT POINT
-      - Datetime or datetime column
-      - pressure numeric
-      - category string
-    """
-    csv_path = find_file("test_pressure_time_small.csv")
+def load_data():
+    # folder where this script lives (e.g. .../Dashboard)
+    base = Path(__file__).resolve().parent
+
+    # try both Dashboard/ and its parent (repo root)
+    candidates = [
+        base / "test_pressure_time_small.csv",
+        base.parent / "test_pressure_time_small.csv",
+    ]
+
+    for csv_path in candidates:
+        if csv_path.exists():
+            break
+    else:
+        raise FileNotFoundError(
+            f"Could not find 'test_pressure_time_small.csv' in {candidates}"
+        )
+
+    # load & clean
     df = pd.read_csv(csv_path)
     df.columns = df.columns.str.strip()
+    df['geometry'] = df['geometry'].apply(wkt.loads)
 
-    if "geometry" not in df.columns:
-        raise ValueError("test_pressure_time_small.csv must contain a 'geometry' column (WKT POINT).")
+    # make GeoDataFrame
+    gdf = gpd.GeoDataFrame(df, geometry='geometry', crs="EPSG:4326")
+    gdf['lat'], gdf['lon'] = gdf.geometry.y, gdf.geometry.x
 
+    # normalize datetime
+    gdf = gdf.rename(columns={"Datetime": "datetime"})
+    gdf['datetime'] = pd.to_datetime(gdf['datetime'])
+
+    
+    return gdf
+
+@st.cache_data
+def load_media_data():
+    base = Path(__file__).resolve().parent
+
+    # look in Dashboard/ then repo root
+    candidates = [
+        base / "media_analysis_sentences.csv",
+        base.parent / "media_analysis_sentences.csv",
+    ]
+    for csv_path in candidates:
+        if csv_path.exists():
+            break
+    else:
+        raise FileNotFoundError(f"Could not find 'media_analysis_sentences.csv' in {candidates}")
+
+    return pd.read_csv(csv_path, sep=";")
+@st.cache_data
+def load_neighbourhoods():
+    base = Path(__file__).resolve().parent
+
+    candidates = [
+        base / "amsterdam_neighbourhoods.geojson",
+        base.parent / "amsterdam_neighbourhoods.geojson",
+    ]
+    for geojson_path in candidates:
+        if geojson_path.exists():
+            break
+    else:
+        raise FileNotFoundError(f"Could not find 'amsterdam_neighbourhoods.geojson' in {candidates}")
+
+    return gpd.read_file(geojson_path)
+@st.cache_data
+def load_nuisance_data():
+    # folder containing this script (e.g. .../Dashboard)
+    base = Path(__file__).resolve().parent
+
+    # two places we might have put the CSV
+    candidates = [
+        base / "overtourism_neighbourhoods.csv",
+        base.parent / "overtourism_neighbourhoods.csv",
+    ]
+
+    # pick the first one that exists
+    for csv_path in candidates:
+        if csv_path.exists():
+            break
+    else:
+        raise FileNotFoundError(
+            f"Could not find 'overtourism_neighbourhoods.csv' in {candidates}"
+        )
+
+    # load and convert to GeoDataFrame
+    df = pd.read_csv(csv_path)
     df["geometry"] = df["geometry"].apply(wkt.loads)
     gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
-    gdf["lat"], gdf["lon"] = gdf.geometry.y, gdf.geometry.x
-
-    if "Datetime" in gdf.columns and "datetime" not in gdf.columns:
-        gdf = gdf.rename(columns={"Datetime": "datetime"})
-    if "datetime" not in gdf.columns:
-        raise ValueError("test_pressure_time_small.csv must contain 'Datetime' or 'datetime' column.")
-
-    gdf["datetime"] = pd.to_datetime(gdf["datetime"])
-
-    if "pressure" not in gdf.columns:
-        raise ValueError("test_pressure_time_small.csv must contain a 'pressure' column.")
-    if "category" not in gdf.columns:
-        gdf["category"] = "All"
 
     return gdf
 
-
 @st.cache_data
-def load_neighbourhood_polygons() -> gpd.GeoDataFrame:
+def load_bundled_routes():
     """
-    Expects: overtourism_neighbourhoods.csv
-      - name
-      - geometry: WKT POLYGON/MULTIPOLYGON
-      - (optional) jaar, pct_nuisance, level
+    Look for bundled_routes.parquet in the Dashboard folder or its parent,
+    then load with GeoPandas.
     """
-    csv_path = find_file("overtourism_neighbourhoods.csv")
-    df = pd.read_csv(csv_path)
-
-    # drop annoying index col if present
-    if "Unnamed: 0" in df.columns:
-        df = df.drop(columns=["Unnamed: 0"])
-
-    if "geometry" not in df.columns:
-        raise ValueError("overtourism_neighbourhoods.csv must contain a 'geometry' column (WKT).")
-
-    df["geometry"] = df["geometry"].apply(wkt.loads)
-    gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
-
-    if "name" not in gdf.columns:
-        raise ValueError("overtourism_neighbourhoods.csv must contain a 'name' column.")
-
-    return gdf
-
-
-@st.cache_data
-def load_hotels_all_data() -> pd.DataFrame:
-    """
-    Expects: hotels_all_data.csv
-      - Buurt column (neighbourhood key)
-      - many numeric indicator columns
-    """
-    csv_path = find_file("hotels_all_data.csv")
-    df = pd.read_csv(csv_path)
-
-    if "Unnamed: 0" in df.columns:
-        df = df.drop(columns=["Unnamed: 0"])
-
-    if "Buurt" not in df.columns:
-        raise ValueError("hotels_all_data.csv must contain 'Buurt' column.")
-
-    return df
-
-
-def _norm_name(x) -> str:
-    if pd.isna(x):
-        return ""
-    return str(x).strip().lower()
-
-
-@st.cache_data
-def build_capacity_polygons() -> gpd.GeoDataFrame:
-    """
-    1) Load neighbourhood polygons
-    2) Aggregate hotel indicators by Buurt (mean)
-    3) Join onto polygons by name (normalized)
-    """
-    poly = load_neighbourhood_polygons().copy()
-    hotels = load_hotels_all_data().copy()
-
-    # numeric cols to aggregate
-    numeric_cols = [c for c in hotels.columns if pd.api.types.is_numeric_dtype(hotels[c])]
-    if not numeric_cols:
-        raise ValueError("No numeric columns found in hotels_all_data.csv.")
-
-    agg = hotels.groupby("Buurt")[numeric_cols].mean(numeric_only=True).reset_index()
-    agg = agg.rename(columns={"Buurt": "name"})
-
-    poly["_k"] = poly["name"].apply(_norm_name)
-    agg["_k"] = agg["name"].apply(_norm_name)
-
-    merged = poly.merge(agg.drop(columns=["name"]), on="_k", how="left").drop(columns=["_k"])
-    return merged
-
-
-def numeric_columns(df: pd.DataFrame, exclude: set[str] | None = None) -> list[str]:
-    exclude = exclude or set()
-    cols = []
-    for c in df.columns:
-        if c in exclude:
-            continue
-        if pd.api.types.is_numeric_dtype(df[c]):
-            cols.append(c)
-    return cols
-
-
-# ------------------------------------------------------------
-# PyDeck helpers
-# ------------------------------------------------------------
-def add_color_column(gdf: gpd.GeoDataFrame, value_col: str) -> gpd.GeoDataFrame:
-    g = gdf.copy()
-    v = pd.to_numeric(g[value_col], errors="coerce")
-
-    if v.notna().sum() == 0:
-        g["fill_color"] = [[180, 180, 180, 60]] * len(g)
-        return g
-
-    vmin = float(np.nanmin(v))
-    vmax = float(np.nanmax(v))
-    if np.isclose(vmin, vmax):
-        g["fill_color"] = [[60, 130, 200, 120]] * len(g)
-        return g
-
-    vn = (v - vmin) / (vmax - vmin)
-    cmap = cm.get_cmap("viridis")
-
-    colors = []
-    for x in vn:
-        if np.isnan(x):
-            colors.append([180, 180, 180, 60])
-        else:
-            r, gg, b, _ = cmap(float(x))
-            colors.append([int(r * 255), int(gg * 255), int(b * 255), 140])
-
-    g["fill_color"] = colors
-    return g
-
-
-def pydeck_geojson_map(gdf: gpd.GeoDataFrame, tooltip_fields: list[str], zoom: float = 11.7):
-    # centroid mean for view
-    c = gdf.geometry.centroid
-    view_state = pdk.ViewState(latitude=float(c.y.mean()), longitude=float(c.x.mean()), zoom=zoom, pitch=0)
-
-    # tooltip html
-    tooltip_html = "<b>{name}</b>"
-    for f in tooltip_fields:
-        if f == "name":
-            continue
-        tooltip_html += f"<br>{f}: {{{f}}}"
-
-    layer = pdk.Layer(
-        "GeoJsonLayer",
-        data=gdf.__geo_interface__,
-        pickable=True,
-        stroked=True,
-        filled=True,
-        get_fill_color="properties.fill_color",
-        get_line_color=[40, 40, 40, 180],
-        line_width_min_pixels=1,
-        auto_highlight=True,
+    base = Path(__file__).resolve().parent
+    candidates = [
+        base / "bundled_routes.parquet",
+        base.parent / "bundled_routes.parquet",
+    ]
+    for pq in candidates:
+        if pq.exists():
+              return gpd.read_parquet(pq)    # ← no engine= here
+    raise FileNotFoundError(
+        f"Could not find 'bundled_routes.parquet' in {candidates}"
     )
 
-    deck = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip={"html": tooltip_html})
-    st.pydeck_chart(deck, use_container_width=True)
+data = load_data()
 
-
-# ------------------------------------------------------------
-# Pages
-# ------------------------------------------------------------
+# ——— Page Functions ———
 def page_home():
-    st.title("DeTourism — Mapping Overtourism Dynamics in Amsterdam")
-    st.caption("MSc thesis (TU Delft) • Graduated July 2025 • Public demo dashboard")
+    st_html("""<script>window.scrollTo(0, 0);</script>""", height=0)
+    
+    base = Path(__file__).resolve().parent
+    image_path = base / "new Title heatmap.png"
 
-    # Optional header image (if you have it)
-    safe_image("new Title heatmap.png")
+    if image_path.exists():
+        st.image(Image.open(image_path), use_container_width=True)
+    else:
+        st.warning("Image not found: new Title heatmap.png")
 
-    st.markdown(
-        """
-Amsterdam is facing increasing pressure from overtourism. While tourism brings economic benefits, it also creates strain on local life:
-overcrowded streets, rising nuisance, and pressure on social cohesion.
+    
+    st.markdown("""
+    **Introduction**  
+    Amsterdam is facing increasing pressure from overtourism. With a growing global middle class and low-cost travel options, more people than ever are visiting the city.  
+    While tourism brings economic benefits, it also causes serious strain on local life—leading to overcrowded streets, rising nuisance, and an erosion of social cohesion. Despite efforts like crowd control and earlier closing times, the city continues to address only the symptoms, not the deeper causes.
+    """)
+    
+    # Resolve path to image
+    base = Path(__file__).resolve().parent
+    image_path = base / "SCWX2243.jpeg"
 
-This dashboard turns public digital traces (e.g., Google Reviews + Popular Times-derived pressure signals) into **spatiotemporal insights**:
-**where and when pressure peaks**, and how this relates to urban structure and potential strategies.
-        """.strip()
-    )
+    if image_path.exists():
+        st.image(Image.open(image_path), use_container_width=True)
+    else:
+        st.warning("Image not found: SCWX2243.jpeg")
 
-    # Optional supporting image
-    safe_image("SCWX2243.jpeg")
+    st.markdown("""
+    **How to Explore Tourist Pressure**
+    
+    Use the panel on the left to filter and the map/time‐series on the right will update instantly:
+    
+    - **Categories**  
+      Toggle one or more attraction types (e.g. Dining, Activities, Shops) to focus on specific flows.
+    
+    - **Day & Hour**  
+      Pick a day of the week and hour of the day to see when and where pressure peaks.
+    
+    The **Tourist Pressure Map** renders a real‐time heatmap of aggregated “pressure” values at each location.  
+    Below, **Pressure Over Time** shows the average pressure across your selected categories for every timestamp—so you can spot daily or weekly rhythms.
+    """)
 
-    # Load pressure data
-    try:
-        gdf = load_pressure_points()
-    except Exception as e:
-        st.error(f"Could not load pressure dataset: {e}")
-        st.info("Expected: test_pressure_time_small.csv (WKT points + datetime + pressure + category).")
-        return
 
-    st.markdown("### Explore Tourist Pressure")
-    st.caption("Use the filters to see how pressure shifts by category and time.")
-
-    # Layout: filters left, map right
+    # — Top layout: filters on the left, map on the right —
     filter_col, map_col = st.columns([1, 3])
 
+    # 1) FILTER PANEL
     with filter_col:
         st.subheader("Filters")
 
-        categories = sorted(gdf["category"].dropna().unique().tolist())
-        # 3-column checkbox grid (like your original)
-        chk_cols = st.columns(2)
+        # a) Category — 3-column checkboxes
+        categories = sorted(data['category'].unique())
+        chk_cols = st.columns(3)
         selected_cats = []
         for idx, cat in enumerate(categories):
-            container = chk_cols[idx % 2]
-            if container.checkbox(cat, value=(idx < min(6, len(categories))), key=f"home_cat_{idx}"):
+            c = chk_cols[idx % 3]
+            if c.checkbox(cat, value=True, key=f"dyn_cat_{idx}"):
                 selected_cats.append(cat)
 
-        if not selected_cats:
-            st.warning("Select at least one category.")
-            return
-
-        filtered = gdf[gdf["category"].isin(selected_cats)].copy()
-
-        # day/hour based on existing timestamps
-        filtered["date"] = filtered["datetime"].dt.date
-        filtered["hour"] = filtered["datetime"].dt.hour
-
-        available_days = sorted(filtered["date"].unique())
+        # b) Day selector
+        filtered_for_days = data[data['category'].isin(selected_cats)]
+        unique_days = sorted(filtered_for_days['datetime'].dt.date.unique())
         selected_day = st.selectbox(
             "Day",
-            available_days,
-            format_func=lambda d: pd.Timestamp(d).strftime("%A %d %b")
+            unique_days,
+            format_func=lambda d: d.strftime("%A")
         )
 
-        # IMPORTANT: default hour=16 to avoid empty / boring first view
-        selected_hour = st.slider("Hour", 0, 23, 16)
+        # c) Hour slider
+        selected_hour = st.slider("Hour", 0, 23, 0)
+        selected_dt = datetime.datetime.combine(selected_day,
+                                                datetime.time(selected_hour))
 
-        selected_dt = pd.Timestamp(selected_day) + pd.Timedelta(hours=int(selected_hour))
-
+    # 2) MAP PANEL
     with map_col:
         st.subheader("Tourist Pressure Map")
-
-        subset = filtered[filtered["datetime"] == selected_dt].copy()
-
-        if subset.empty:
-            st.info("No data for this moment. Try another hour/day or broaden categories.")
-        else:
+        subset = data[
+            (data['category'].isin(selected_cats)) &
+            (data['datetime'] == selected_dt)
+        ]
+        if not subset.empty:
             view = pdk.ViewState(
-                latitude=float(subset["lat"].mean()),
-                longitude=float(subset["lon"].mean()),
-                zoom=12,
-                pitch=0
+                latitude=subset['lat'].mean(),
+                longitude=subset['lon'].mean(),
+                zoom=12, pitch=0
             )
-
             layer = pdk.Layer(
                 "HeatmapLayer",
                 data=subset,
@@ -320,218 +229,530 @@ This dashboard turns public digital traces (e.g., Google Reviews + Popular Times
                 get_weight="pressure",
                 radiusPixels=60
             )
+            st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view))
+        else:
+            st.info("No data for that time/category combination.")
 
-            st.pydeck_chart(pdk.Deck(layers=[layer], initial_view_state=view), use_container_width=True)
-
+    # — Full-width time series below —
     st.subheader("Pressure Over Time")
-    ts = filtered.groupby("datetime", as_index=False)["pressure"].mean()
-    ts = ts.sort_values("datetime")
-
-    chart = (
-        alt.Chart(ts)
-        .mark_line()
-        .encode(
-            x=alt.X("datetime:T", title="Time"),
-            y=alt.Y("pressure:Q", title="Average pressure"),
-            tooltip=["datetime:T", "pressure:Q"],
-        )
-        .properties(height=220)
+    ts_data = data[data['category'].isin(selected_cats)]
+    pressure_ts = (
+        ts_data
+        .groupby('datetime')['pressure']
+        .mean()
+        .reset_index()
+        .set_index('datetime')
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.line_chart(pressure_ts)
 
-    # Optional image you already use
-    col1, col2 = st.columns([1.5, 1])
+
+
+
+    
+
+        # Create two columns
+    col1, col2 = st.columns([1.5, 1])  # Adjust width ratio as needed
+
     with col1:
-        st.markdown(
-            """
-**Why this matters**  
-Overtourism is not just “too many tourists”. It’s a **dynamic system**: where people go, when they go, and how the urban fabric absorbs them.
-To respond effectively, we need to look beyond reactive measures and understand spatial-temporal patterns.
-            """.strip()
-        )
+        st.markdown("""
+        **Understanding the Problem**  
+        The current strategies lack a systemic view. Overtourism is not just about too many tourists—it's about when and where they move, how the urban fabric absorbs them, and what social thresholds are crossed. Cities like Amsterdam need to move beyond reactive measures and embrace complexity.
+        """)
+
     with col2:
-        safe_image("dining cafes.png")
+        base = Path(__file__).resolve().parent
+        image_path = base / "dining cafes.png"
+        if image_path.exists():
+            st.image(Image.open(image_path), use_container_width=True)
+        else:
+            st.warning("Image not found: dining cafes.png")
 
-    safe_image("public transport corridor.png")
+    st.markdown("""
+    **Why This Dashboard**  
+    This dashboard transforms publicly available data—like Google reviews and Popular Times—into spatial and temporal insights. It allows us to see tourism not as a static number, but as a dynamic system unfolding through the city’s streets and neighborhoods.  
 
+    Use the tabs in the top left corner to explore the chapters and see where and when pressure is most intense, how the urban environment shapes this impact, and what strategies can help reimagine tourism for a more livable Amsterdam.
+    """)
+    base = Path(__file__).resolve().parent
+    image_path = base / "public transport corridor.png"
+
+    if image_path.exists():
+        st.image(Image.open(image_path), use_container_width=True)
+    else:
+        st.warning("Image not found: public transport corridor.png")
+
+def page_overtourism():
+    st_html("""<script>window.scrollTo(0, 0);</script>""", height=0)
+    st.title("Overtourism")
+    st.markdown("""
+    **What it’s about**  
+    Amsterdam is increasingly affected by overtourism. With millions of visitors each year, the city faces growing pressure on its public spaces, cultural fabric, and liveability. Tourism is no longer confined to specific landmarks or high seasons—its presence is felt across neighborhoods and throughout the week.  
+    While strategies have been introduced to manage the flow of tourists, they often treat symptoms rather than structural causes. There is a need to better understand *where*, *when*, and *how* tourism impacts the city.
+
+    **Analysis performed**  
+    To explore this, an analysis was conducted on publicly available texts from local media, neighborhood reports, and complaints. These texts were classified into different types—places, moments, and impacts—and mapped to specific neighborhoods.  
+    A separate dataset was used to measure self-reported nuisance among residents.
+
+    **Key findings**  
+    - Tourism is still highly concentrated in the historic center, but pressure spreads outward to other neighborhoods  
+    - Activity peaks on Friday and Saturday evenings and around public holidays  
+    - Residents report increasing nuisance, loss of familiarity, and pressure on everyday life  
+    """)
+    # — Data & Popups —
+    media      = load_media_data()
+    neigh_gdf  = load_neighbourhoods()
+    places_df  = media[media.type == "place"]
+
+    # build pop-up HTML per neighbourhood
+    popup_map = {}
+    for name, grp in places_df.groupby("neighbourhood"):
+        html = ""
+        for _, row in grp.iterrows():
+            html += (
+                f"<div style='font-size:12px; line-height:1.2; "
+                f"white-space:normal; max-width:250px;'>"
+                f"<b>{name}</b> {row.sentence}<br>"
+                f"<i>({row.source})</i></div><hr style='margin:4px 0;'>"
+            )
+        popup_map[name] = html
+
+    # split districts vs neighbourhoods
+    mentioned     = places_df.neighbourhood.unique().tolist()
+    dist_gdf      = neigh_gdf.query("name in @mentioned and level=='District'")
+    neigh_only_gdf= neigh_gdf.query("name in @mentioned and level=='Neighbourhood'")
+
+    # nuisance data
+    nuis_gdf = load_nuisance_data().query("level=='Neighbourhood' and pct_nuisance==pct_nuisance")
+
+    # style functions
+    def style_district(feat):
+        return {
+            "fillColor": "#fcbba1",  # light red
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.3
+        }
+
+    def style_neighbourhood(feat):
+        return {
+            "fillColor": "#cb181d",  # dark red
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.5
+        }
+
+    def style_nuisance(feat):
+        val = feat["properties"].get("pct_nuisance")
+        if val is None:
+            return {"fillColor":"#cccccc","color":"black","weight":1,"fillOpacity":0.3}
+        return {"fillColor":cmap(val),"color":"black","weight":1,"fillOpacity":0.7}
+
+    # prepare the nuisance colormap
+    # — prepare the nuisance colormap for right map (white → dark red) —
+    vmax = nuis_gdf["pct_nuisance"].max()
+    cmap = branca.colormap.LinearColormap(
+        ["white", "#cb181d"],
+        vmin=0,
+        vmax=vmax,
+        caption="% Residents Experiencing Nuisance"
+    )
+    st.subheader("Places")
+    
+
+    col1, col2 = st.columns(2)
+
+    
+    # Left: Overtourism Places map
+    with col1:
+        st.markdown("""
+        *This map shows where overtourism is often mentioned in local texts and reports.  
+        Darker areas highlight neighborhoods that appear frequently in descriptions of tourist activity. Click on a neighborhood to read sample sentences from the sources.*
+        """)
+        m1 = folium.Map(
+            location=[52.37, 4.90],
+            zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
+            tiles="CartoDB positron"
+        )
+        for _, r in dist_gdf.iterrows():
+            iframe = IFrame(html=popup_map[r["name"]], width=270, height=150)
+            folium.GeoJson(
+                data=r.geometry.__geo_interface__,
+                style_function=style_district,
+                tooltip=folium.Tooltip(r["name"], sticky=True),
+                popup=folium.Popup(iframe, max_width=300)
+            ).add_to(m1)
+        for _, r in neigh_only_gdf.iterrows():
+            iframe = IFrame(html=popup_map[r["name"]], width=300, height=180)
+            folium.GeoJson(
+                data=r.geometry.__geo_interface__,
+                style_function=style_neighbourhood,
+                tooltip=folium.Tooltip(r["name"], sticky=True),
+                popup=folium.Popup(iframe, max_width=320)
+            ).add_to(m1)
+        st_html(m1._repr_html_(), width=None, height=400, scrolling=False)
+
+    # Right: Tourism Nuisance continuous map (white → dark red, semi-transparent)
+    with col2:
+        st.markdown("""
+        *This map shows the percentage of residents in each neighborhood who report experiencing nuisance due to tourism.  
+        Darker red tones indicate higher levels of nuisance.*
+        """)
+        # 1) Base map
+        m2 = folium.Map(
+            location=[52.37, 4.90],
+            zoom_start=12, min_zoom=11, max_zoom=15, max_bounds=True,
+            tiles="CartoDB positron"
+        )
+
+        # 2) Continuous GeoJson layer styled by our colormap
+        folium.GeoJson(
+            data=nuis_gdf.__geo_interface__,
+            style_function=lambda feat: {
+                "fillColor": cmap(feat["properties"]["pct_nuisance"]),
+                "color": "black",
+                "weight": 1,
+                "fillOpacity": 0.7
+            },
+            tooltip=folium.GeoJsonTooltip(
+                fields=["name", "pct_nuisance"],
+                aliases=["Neighbourhood", "% Nuisance"],
+                localize=True
+            )
+        ).add_to(m2)
+
+
+        # 4) Embed full-width, no scrollbar
+        st_html(
+            m2._repr_html_(),
+            width=None,
+            height=400,
+            scrolling=False
+        )
+        
+
+    
+
+    # — Moments Graphs ——
+    st.subheader("Moments")
+    st.markdown("""
+    *The charts below show when tourism-related activity is most often mentioned in texts.  
+    Bars in **blue** highlight hours and days frequently associated with tourist pressure.*
+    """)
+    moments = media[media.type == "moment"]
+    
+    # prepare hours
+    hrs = (moments.groupby("hour")
+                   .sentence
+                   .apply(lambda s: "<br>".join(s))
+                   .reset_index(name="sentences"))
+    hrs["count"] = hrs.sentences.str.count("<br>") + 1
+    full_hrs = pd.DataFrame({"hour": list(range(24))})
+    hrs = full_hrs.merge(hrs, on="hour", how="left").fillna({"sentences":"", "count":0})
+    
+    hour_chart = (
+        alt.Chart(hrs)
+           .mark_bar()
+           .encode(
+             x=alt.X("hour:O", title="Hour of Day"),
+             y=alt.Y("count:Q", title="Mentions"),
+             color=alt.condition(
+               alt.datum.count > 0,
+               alt.value("steelblue"),
+               alt.value("lightgray")
+             ),
+             tooltip=[
+               alt.Tooltip("hour:O", title="Hour"),
+               alt.Tooltip("sentences:N", title="Sentences")
+             ]
+           )
+           .properties(width=600, height=200)
+    )
+    
+    
+    # prepare days
+    days_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+    dys = (moments.groupby("day")
+                   .sentence
+                   .apply(lambda s: "<br>".join(s))
+                   .reset_index(name="sentences"))
+    dys["count"] = dys.sentences.str.count("<br>") + 1
+    full_days = pd.DataFrame({"day": days_order})
+    dys = full_days.merge(dys, on="day", how="left").fillna({"sentences":"", "count":0})
+    
+    day_chart = (
+        alt.Chart(dys)
+           .mark_bar()
+           .encode(
+             x=alt.X("day:O", sort=days_order, title="Day of Week"),
+             y=alt.Y("count:Q", title="Mentions"),
+             color=alt.condition(
+               alt.datum.count > 0,
+               alt.value("steelblue"),
+               alt.value("lightgray")
+             ),
+             tooltip=[
+               alt.Tooltip("day:O", title="Day"),
+               alt.Tooltip("sentences:N", title="Sentences")
+             ]
+           )
+           .properties(width=600, height=200)
+    )
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("**By Hour of Day**")
+        st.altair_chart(hour_chart, use_container_width=True)
+    
+    with col2:
+        st.markdown("**By Day of Week**")
+        st.altair_chart(day_chart, use_container_width=True)
+
+    # — Impacts Icons ——
+    st.subheader("Impacts")
+    st.markdown("""
+    *Tourism has a variety of impacts on the city. Click each icon to explore quotes related to nuisance, the economy, or loss of social familiarity.*
+    """)
+    impacts = media[media.type == "impact"].groupby("impact_type").sentence.apply(list).to_dict()
+    cols = st.columns(3)
+    icons = {"nuisance":"😡", "economy":"💰", "familiarity":"🤝"}
+    for col, imp in zip(cols, impacts):
+        with col:
+            with st.expander(f"{icons[imp]} {imp.title()}"):
+                for s in impacts[imp]:
+                    st.write(f"- {s}")
+
+def page_tourism_dynamics():
+    st.title("Tourism Dynamics")
+    
+    
+
+    def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10) -> bytes:
+        """
+        Manually build an in-memory GIF by capturing each frame from the Matplotlib canvas.
+        """
+        if gdf.crs.to_string() != "EPSG:3857":
+            gdf_vis = gdf.to_crs(epsg=3857)
+        else:
+            gdf_vis = gdf.copy()
+        # 2) Build coordinate lists & styling
+        paths  = [np.array(line.coords) for line in gdf_vis.geometry]
+        cats   = gdf_vis['category'].astype("category")
+        visits = gdf_vis['visits'].values
+    
+        cmap      = plt.get_cmap("tab10")
+        cat_colors = {c: cmap(i) for i, c in enumerate(cats.cat.categories)}
+        lw        = np.interp(visits, [visits.min(), visits.max()], [0.5, 3.0])
+    
+        # 3) Set up figure & axes
+        fig, ax = plt.subplots(figsize=(6,6), dpi=100)
+        fig.patch.set_facecolor('black')
+        ax.set_facecolor('black')
+        ax.axis('off')
+    
+       
+        # 4) Zoom to a fixed Amsterdam bbox (lon/lat 4.68–5.08, 52.28–52.44)
+        from shapely.geometry import box
+        # define in WGS84
+        am_bbox = box(4.68, 52.28, 5.08, 52.44)
+        # reproject to WebMercator (same CRS as gdf_vis)
+        am_geo = gpd.GeoSeries([am_bbox], crs="EPSG:4326").to_crs(gdf_vis.crs)
+        xmin, ymin, xmax, ymax = am_geo.total_bounds
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+    
+        # 5) Add dark basemap
+        ctx.add_basemap(
+            ax,
+            source=ctx.providers.CartoDB.DarkMatter,
+            crs=gdf_vis.crs.to_string(),
+            zoom=12
+        )
+    
+        # 6) Draw in batches for speed
+        chunk_size = 100
+        n_edges    = len(paths)
+        n_frames   = int(np.ceil(n_edges / chunk_size))
+        frames     = []
+    
+        for fidx in range(n_frames):
+            s = fidx * chunk_size
+            e = min(s + chunk_size, n_edges)
+            for i in range(s, e):
+                p   = paths[i]
+                col = cat_colors[gdf_vis['category'].iloc[i]]
+                ax.plot(p[:,0], p[:,1], color=col, lw=lw[i], alpha=0.1)
+    
+            # capture PNG
+            buf_png = io.BytesIO()
+            fig.savefig(
+                buf_png,
+                format='png',
+                facecolor=fig.get_facecolor(),
+                bbox_inches='tight',
+                pad_inches=0
+            )
+            buf_png.seek(0)
+            frames.append(Image.open(buf_png).convert('RGB'))
+    
+        # 7) Assemble GIF
+        gif_buf = io.BytesIO()
+        duration = int(1000 / fps)
+        frames[0].save(
+            gif_buf,
+            format='GIF',
+            save_all=True,
+            append_images=frames[1:],
+            loop=0,
+            duration=duration
+        )
+        gif_buf.seek(0)
+        plt.close(fig)
+        return gif_buf
+    
+    # -------------------------------------------------------------------
+    st.title("Edge‐Bundled Routes Animation")
+    st.markdown("""
+    **How to View Bundled Tourist Flows**
+    
+    This animation exposes the major corridors tourists follow by grouping (bundling) individual paths:
+    
+    1. **Category Filters**  
+       Check the boxes to include only the types of trips you care about (e.g. Dining & Cafes, Activities, Cannabisshop).
+    
+    2. **Animation Speed**  
+       Use the FPS slider to slow down or speed up the build-up of routes.
+    
+    3. **Generate**  
+       Click **Generate Edge Animation** to render the GIF. Each frame draws a batch of bundled edges, revealing the dominant travel corridors through Amsterdam.
+    
+    Use the final animation to identify high-traffic pathways, plan detours, or understand overall flow structure in the city.
+    """)
+    # 1) load your bundled data (no text input needed)
+    try:
+        gdf = load_bundled_routes()
+    except FileNotFoundError as e:
+        st.error(str(e))
+        return
+    
+    # 2) filter by category
+    st.markdown("**Filter Categories**")
+    categories = sorted(gdf['category'].unique())
+    col1, col2 = st.columns(2)
+    selected = []
+    selected = []
+    for idx, cat in enumerate(categories):
+        container = col1 if idx % 2 == 0 else col2
+        # Only pre-check the first category, uncheck the rest
+        default_checked = True if idx == 0 else False
+        if container.checkbox(cat, value=default_checked, key=f"cat_{idx}"):
+            selected.append(cat)
+    filtered = gdf[gdf['category'].isin(selected)].reset_index(drop=True)
+
+    # 3) animation controls
+    fps = st.slider("Frames per second", 1, 30, 10)
+
+    if st.button("🎬 Generate Edge Animation"):
+        with st.spinner("Rendering GIF…"):
+            buf = create_animation(filtered, fps=fps)
+            st.image(buf, caption="Edge-bundled flows", use_container_width=True)
 
 def page_carrying_capacity():
-    st.title("Carrying Capacity — Urban structure & accessibility indicators")
-    st.markdown(
-        """
-This page maps **neighbourhood-level indicators** derived from the hotel dataset (`hotels_all_data.csv`),
-aggregated per neighbourhood (Buurt) and joined to neighbourhood polygons.
+    st.title("Carrying Capacity")
+    st.title("Coming Soon 🚧")
+    st.markdown("""
+    We're still working on this part of the dashboard.  
+    Stay tuned for updates—new content will be added here shortly!
+    """)
+    st.markdown("""
+    **What it’s about**  
+    Assessing how spatial network capacity and land‐use form modify liveability under tourism pressure.
 
-Use the dropdown to switch indicators and explore where the city has **higher potential capacity / accessibility**.
-        """.strip()
-    )
+    **Analysis performed**  
+    - Space Syntax Angular Choice  
+    - Floor Space Index (FSI), Ground Space Index (GSI), Mixed‐Use Index (MXI)  
+    - Moderation analysis: tourist pressure → perceived nuisance, moderated by private/pedestrian/built space  
+    """)
 
-    try:
-        gdf = build_capacity_polygons()
-    except Exception as e:
-        st.error(f"Could not build capacity polygons: {e}")
-        st.info("Expected files: overtourism_neighbourhoods.csv + hotels_all_data.csv")
+    # 1) Load & parse geometry
+    csv_path = Path(__file__).resolve().parent / "hotels_all_data.csv"
+    df = pd.read_csv(csv_path)
+    df["geometry"] = df["geometry"].apply(wkt.loads)
+    gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
+
+    # 2) Extract coordinates for plotting
+    gdf["lat"] = gdf.geometry.y
+    gdf["lon"] = gdf.geometry.x
+
+    # 3) Choose variable to visualize
+    numeric_cols = gdf.select_dtypes(include='number').columns.tolist()
+    show_cols = [col for col in numeric_cols if col not in ['lat', 'lon'] and gdf[col].nunique() > 5]
+
+    if not show_cols:
+        st.warning("No suitable numeric columns available for visualization.")
         return
 
-    # Optional year filter (if nuisance is included)
-    if "jaar" in gdf.columns:
-        years = sorted(pd.to_numeric(gdf["jaar"], errors="coerce").dropna().unique().tolist())
-        if len(years) > 1:
-            selected_year = st.selectbox("Year (for nuisance overlay columns)", years, index=len(years)-1)
-            gdf = gdf[gdf["jaar"] == selected_year].copy()
+    selected_var = st.selectbox("Choose variable to display:", show_cols)
 
-    exclude = {"jaar"}
-    vars_ = numeric_columns(gdf, exclude=exclude)
+    # 4) Setup Folium map
+    center = [gdf["lat"].mean(), gdf["lon"].mean()]
+    m = folium.Map(location=center, zoom_start=12, tiles="CartoDB positron")
+    cluster = MarkerCluster().add_to(m)
 
-    # Prefer these columns if present (they are in your hotels_all_data.csv)
-    preferred = [
-        "pressure 15min",
-        "percent_within_15min",
-        "15min % high A.C.",
-        "pressure 25min",
-        "percent_within_25min",
-        "25min % high A.C.",
-        "pressure 5min",
-        "percent_within_5min",
-        "5min % high A.C.",
-        "pct_nuisance",
-    ]
+    # Normalize selected variable values for coloring
+    vmin, vmax = gdf[selected_var].min(), gdf[selected_var].max()
 
-    default_idx = 0
-    for p in preferred:
-        if p in vars_:
-            default_idx = vars_.index(p)
-            break
+    colormap = folium.LinearColormap(["green", "yellow", "red"], vmin=vmin, vmax=vmax)
+    colormap.caption = selected_var
+    colormap.add_to(m)
 
-    selected_var = st.selectbox("Choose an indicator to display:", vars_, index=default_idx)
+    for _, row in gdf.iterrows():
+        value = row[selected_var]
+        popup = f"<b>{row.get('name', 'Unnamed')}</b><br>{selected_var}: {value:.2f}"
+        folium.CircleMarker(
+            location=(row["lat"], row["lon"]),
+            radius=5,
+            color=colormap(value),
+            fill=True,
+            fill_opacity=0.7,
+            popup=popup
+        ).add_to(cluster)
 
-    # Show join quality warning (if the chosen var came from hotels aggregation)
-    if selected_var in ["pressure 5min", "pressure 15min", "pressure 25min", "5min % high A.C.", "15min % high A.C.", "25min % high A.C."]:
-        miss = pd.to_numeric(gdf[selected_var], errors="coerce").isna().sum()
-        if miss > 0:
-            st.warning(f"{miss} neighbourhoods have no matching hotel-derived values (name mismatch or no hotels in that neighbourhood).")
+    # 5) Display
+    st_folium(m, width=900, height=600)
 
-    mapped = add_color_column(gdf, selected_var)
+def page_finding_detour():
+    st.title("Finding a DeTour")
+    st.title("Coming Soon 🚧")
+    st.markdown("""
+    We're still working on this part of the dashboard.  
+    Stay tuned for updates—new content will be added here shortly!
+    """)
 
-    left, right = st.columns([1.2, 0.8])
-
-    with left:
-        st.subheader("Indicator Map")
-        tooltip_fields = ["name", selected_var]
-        if "pct_nuisance" in gdf.columns and selected_var != "pct_nuisance":
-            tooltip_fields = ["name", selected_var, "pct_nuisance"]
-        pydeck_geojson_map(mapped, tooltip_fields=tooltip_fields, zoom=11.7)
-
-    with right:
-        st.subheader("Distribution")
-        s = pd.to_numeric(mapped[selected_var], errors="coerce").replace([np.inf, -np.inf], np.nan).dropna()
-
-        if s.empty:
-            st.warning("No valid values for this indicator.")
-        else:
-            hist_df = pd.DataFrame({selected_var: s})
-            hist = (
-                alt.Chart(hist_df)
-                .mark_bar()
-                .encode(
-                    x=alt.X(f"{selected_var}:Q", bin=alt.Bin(maxbins=30)),
-                    y=alt.Y("count()", title="Neighbourhoods"),
-                    tooltip=["count()"],
-                )
-                .properties(height=220)
-            )
-            st.altair_chart(hist, use_container_width=True)
-
-            st.markdown("**Quick stats**")
-            st.write(
-                {
-                    "min": float(s.min()),
-                    "median": float(s.median()),
-                    "mean": float(s.mean()),
-                    "max": float(s.max()),
-                }
-            )
-
-    with st.expander("How to read these indicators (short)"):
-        st.markdown(
-            """
-- **pressure 5/15/25min**: aggregated pressure signals around hotel catchments (time-based buffers).
-- **% high A.C. (Angular Choice)**: proxy for movement centrality / network attractiveness.
-- **percent_within_5/15/25min**: how much of the points fall within those catchments.
-Use this page to spot **areas with capacity potential** that can support a redistribution strategy.
-            """.strip()
-        )
-
-
-def page_detour():
-    st.title("The DeTour — A corridor strategy to redistribute pressure")
-    st.markdown(
-        """
-Based on the spatial patterns of pressure and urban capacity, the thesis proposes a **DeTour**:
-a corridor connecting underutilised but well-connected areas (e.g., **Sloterdijk — Zuidas — Bijlmer ArenA**).
-
-The goal is to **reduce pressure on the historic core** by offering alternative, accessible destinations — while strengthening
-a multi-core structure of the city.
-        """.strip()
-    )
-
-    st.subheader("Key visuals")
-    # Use your existing visuals if present
-    safe_image("public transport corridor.png")
-    safe_image("dining cafes.png")
-
-    st.subheader("Why it makes sense (in 3 bullets)")
-    st.markdown(
-        """
-- **Accessibility:** strong public transport connections enable easy re-routing.
-- **Capacity potential:** parts of the corridor show higher network capacity / accessibility indicators (see Page 2).
-- **Experience diversification:** encourages a broader distribution of visitor experiences across the city.
-        """.strip()
-    )
-
-    # Optional: simple “core highlight” map (heuristic by name match)
-    st.markdown("#### Optional: quick core highlight map")
-    try:
-        gdf = load_neighbourhood_polygons().copy()
-        core_keywords = ["sloterdijk", "zuidas", "bijlmer", "arena", "amstel"]
-        gdf["is_core"] = gdf["name"].astype(str).str.lower().apply(lambda s: any(k in s for k in core_keywords))
-        gdf["fill_color"] = gdf["is_core"].apply(lambda x: [220, 80, 80, 160] if x else [170, 170, 170, 40])
-        pydeck_geojson_map(gdf, tooltip_fields=["name"], zoom=11.5)
-        st.caption("This is a simple name-keyword highlight. If you want exact polygons for the corridor, we can add a corridor layer later.")
-    except Exception as e:
-        st.info(f"Could not render optional map: {e}")
-
+def page_strategising_detour():
+    st.title("Strategising a DeTour")
+    st.title("Coming Soon 🚧")
+    st.markdown("""
+    We're still working on this part of the dashboard.  
+    Stay tuned for updates—new content will be added here shortly!
+    """)
 
 def page_about():
-    st.title("About")
-    st.markdown(
-        """
-**Isamu Goiati**  
-MSc Urban Planning & Design (TU Delft) — graduated July 2025.
+    st.title("About / Contact")
+    st.markdown("""
+    **Isamu Goiati**  
+    MSc Urban Planning & Design student at TU Delft  
+    """)
 
-If you’re seeing this dashboard via a shared link and want to collaborate (urban data / mobility / tourism),
-feel free to reach out.
-        """.strip()
-    )
-
-    st.markdown("**Recommended links to add before posting on LinkedIn:**")
-    st.code(
-        "- Thesis PDF: <link>\n- Dashboard link: <link>\n- GitHub repo: <link>\n- LinkedIn: <link>"
-    )
-
-
-# ------------------------------------------------------------
-# Navigation (public-ready: only what you want to show)
-# ------------------------------------------------------------
-st.sidebar.title("DeTourism Dashboard")
-st.sidebar.caption("Public demo")
-
-PAGES = {
+# ——— Navigation ———
+pages = {
     "Home": page_home,
-    "Carrying Capacity": page_carrying_capacity,
-    "The DeTour": page_detour,
-    "About": page_about,
+    "Analysis: Overtourism": page_overtourism,
+    "Analysis: Tourism Dynamics": page_tourism_dynamics,
+    "Analysis: Carrying Capacity": page_carrying_capacity,
+    "Finding a DeTour": page_finding_detour,
+    "Strategising a DeTour": page_strategising_detour,
+    "About / Contact": page_about
 }
 
-selection = st.sidebar.selectbox("Navigate", list(PAGES.keys()))
-PAGES[selection]()
+selection = st.sidebar.selectbox("Navigate to", list(pages.keys()))
+pages[selection]()
