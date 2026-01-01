@@ -658,10 +658,6 @@ def page_tourism_dynamics():
 
 def page_carrying_capacity():
     st.title("Carrying Capacity")
-    st.title("Coming Soon 🚧")
-    st.markdown("""
-    We're still working on this part of the dashboard.  
-    Stay tuned for updates—new content will be added here shortly!
     """)
     st.markdown("""
     **What it’s about**  
@@ -728,14 +724,6 @@ def page_finding_detour():
     Stay tuned for updates—new content will be added here shortly!
     """)
 
-def page_strategising_detour():
-    st.title("Strategising a DeTour")
-    st.title("Coming Soon 🚧")
-    st.markdown("""
-    We're still working on this part of the dashboard.  
-    Stay tuned for updates—new content will be added here shortly!
-    """)
-
 def page_about():
     st.title("About / Contact")
     st.markdown("""
@@ -750,7 +738,6 @@ pages = {
     "Analysis: Tourism Dynamics": page_tourism_dynamics,
     "Analysis: Carrying Capacity": page_carrying_capacity,
     "Finding a DeTour": page_finding_detour,
-    "Strategising a DeTour": page_strategising_detour,
     "About / Contact": page_about
 }
 
