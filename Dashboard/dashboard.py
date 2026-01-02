@@ -695,37 +695,50 @@ def page_carrying_capacity():
     
     st.markdown(
         """
-        This page explores carrying capacity: the extent to which different parts of the city can absorb tourist activity 
-        without creating excessive pressure on everyday urban life. Rather than focusing on where tourists are, this analysis looks at where tourism could be accommodated, 
-        based on urban structure, accessibility, and existing hotel locations.
-        """)
+    This page explores **carrying capacity**: the extent to which different parts of Amsterdam can accommodate tourist
+    activity without creating excessive pressure on everyday urban life.
+    
+    Rather than focusing on where tourists currently concentrate, this analysis looks at **where tourism could be
+    absorbed**, based on urban structure, accessibility, and the spatial context of hotels.
+        """.strip()
+    )
     
     st.markdown(
         """
-        All indicators shown here are derived from hotel locations in Amsterdam and their surrounding urban context.
-        Hotels are used as anchoring points because they represent key entry points into the city’s tourism system and strongly
-        shape how visitors move, concentrate, and spread through urban space."""
+    All indicators shown here are derived from **hotel locations in the city** and their surrounding urban environment.
+    Hotels are used as anchoring points because they represent key entry points into the tourism system and strongly
+    influence how visitors move, cluster, and spread through urban space.
+        """.strip()
     )
     
     st.markdown("---")
     
     st.subheader("How the Map Works")
+    
     st.markdown(
         """
-    The map displays values that show characteristics of the surrounding areas of hotels.
+    The map displays **neighbourhood-level values**, calculated by aggregating hotel-based indicators to the neighbourhood
+    (Buurt) scale.
     
-    - Use the dropdown menu to switch between variables.
-    - Red colour indicates higher value, Green lower.
-    - Click on a dot to see the specific value of a location.
+    - Use the dropdown menu to switch between different variables.
+    - Darker colours indicate higher values for the selected indicator.
+    - Hover over a neighbourhood to see the exact value.
     
-    The goal is not to label areas as “good” or “bad”, but to compare spatial patterns of capacity, accessibility, and
-    potential pressure across the city.
+    The goal is not to label areas as *“good”* or *“bad”*, but to compare **spatial patterns of capacity, accessibility,
+    and potential pressure** across the city.
         """.strip()
     )
     
     st.markdown("---")
     
     st.subheader("Understanding the Variables")
+    
+    st.markdown(
+        """
+    The variables available in the dropdown can be grouped into four main categories. Each group highlights a different
+    aspect of urban capacity around hotels.
+        """.strip()
+    )
     
     with st.expander("1. Accessibility & Network Centrality (Angular Choice)"):
         st.markdown(
@@ -735,11 +748,13 @@ def page_carrying_capacity():
     - 15min % high A.C.
     - 25min % high A.C.
     
-        These indicators show the share of highly central streets (Angular Choice) within a travel-time catchment around hotels.
-        Angular Choice is a Space Syntax measure that approximates how likely a street is to be used as part of movement through
-        the city. Higher values suggest better network connectivity and accessibility.
+    These indicators show the **share of highly central streets** (Angular Choice) within a travel-time catchment around
+    hotels.
     
-    The different time thresholds reflect different spatial scales:
+    Angular Choice is a Space Syntax measure that approximates how likely a street is to be used as part of movement through
+    the city. Higher values indicate **better network connectivity and accessibility**.
+    
+    The different time thresholds represent different spatial scales:
     - **5 minutes:** very local accessibility
     - **15 minutes:** district-scale movement
     - **25 minutes:** city-wide connectivity
@@ -754,12 +769,13 @@ def page_carrying_capacity():
     - pressure 15min
     - pressure 25min
     
-    These variables represent aggregated **tourist pressure signals** within increasing travel-time catchments around hotels.
+    These variables represent aggregated **tourist pressure signals** within increasing travel-time catchments around
+    hotels.
     
     They are derived from publicly available digital traces of tourist activity and indicate how intense tourism-related
     activity is in the surroundings of hotel locations.
     
-    Together, they show how pressure **scales up spatially** as the area around hotels increases.
+    Together, they show how pressure **accumulates and scales spatially** around hotels.
             """.strip()
         )
     
@@ -775,7 +791,7 @@ def page_carrying_capacity():
     (e.g. dining, culture, nightlife).
     
     They reveal how different types of tourist activities rely on different spatial structures, and whether certain
-    neighbourhoods are structurally better suited for specific kinds of tourism.
+    neighbourhoods are structurally better suited for specific forms of tourism.
             """.strip()
         )
     
@@ -791,9 +807,10 @@ def page_carrying_capacity():
     
     - `within_*` counts how many activity points fall inside a given travel-time range.
     - `percent_within_*` expresses this as a share of all points.
-    - `total_points` shows the total number of activity points associated with a neighbourhood.
+    - `total_points` represents the total number of activity points associated with a neighbourhood.
     
-    They help contextualize accessibility and pressure by showing **how concentrated or dispersed activity is** around hotels.
+    They help contextualize accessibility and pressure by showing **how concentrated or dispersed activity is** around
+    hotels.
             """.strip()
         )
     
