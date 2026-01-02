@@ -13,4 +13,3 @@ numpy
 matplotlib
 pillow
 contextily
-base64
