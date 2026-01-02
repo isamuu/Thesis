@@ -268,7 +268,7 @@ def page_home():
     
     line = alt.Chart(total).mark_line(strokeWidth=2).encode(
         x="datetime:T",
-        y=alt.Y("total_pressure:Q", scale=alt.Scale(domain=[0, 1])),
+        y=alt.Y("total_pressure:Q", scale=alt.Scale(domain=[0, 4])),
         tooltip=[
             alt.Tooltip("datetime:T", title="Time"),
             alt.Tooltip("total_pressure:Q", title="Total pressure", format=".2f"),
