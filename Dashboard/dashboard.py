@@ -18,7 +18,6 @@ import os
 import io
 import contextily as ctx
 from folium.plugins import MarkerCluster
-import base64
 
 st.set_page_config(page_title="Digital Report Dashboard", layout="wide")
 
@@ -749,84 +748,52 @@ def page_carrying_capacity():
     # 5) Display
     st_folium(m, width=900, height=600)
 
+
 def page_detourism():
-    
+    st.title("DeTourism")
 
-    REPORT_URL = "https://repository.tudelft.nl/file/File_6c37c232-04ab-4e5a-9ccf-766005dcf32b?preview=1"
-    
-    def _img_to_data_uri(path: Path) -> str:
-        """Convert a local image to a data URI so we can make it clickable via HTML."""
-        ext = path.suffix.lower().replace(".", "")
-        mime = "jpeg" if ext in ["jpg", "jpeg"] else ext
-        b64 = base64.b64encode(path.read_bytes()).decode("utf-8")
-        return f"data:image/{mime};base64,{b64}"
-    
-    def page_detourism():
-        st.title("DeTourism")
-    
+    st.markdown(
+        """A small selection of visuals from my thesis **DeTourism**.
+        Open the full report via the link below."""
+    )
+
+    st.divider()
+
+    left, right = st.columns([1, 1.2], gap="large")
+
+    with left:
+        frontpage_path = _find_file("frontpage.jpg") if "_find_file" in globals() else Path("frontpage.jpg")
+        st.image(frontpage_path, use_container_width=True)
+
+        # Nice clickable element (no base64)
+        try:
+            st.link_button("Open thesis report", REPORT_URL, use_container_width=True)
+        except Exception:
+            st.markdown(f"[Open thesis report]({REPORT_URL})")
+
+    with right:
+        st.subheader("Selected visuals")
         st.markdown(
+            """These figures summarise the core idea: where tourism pressure concentrates, how it shifts over time, 
+            and how a DeTourism strategy can redirect flows while supporting urban liveability.
             """
-    This page highlights a small selection of visuals from my thesis **DeTourism**.
-    If you’re curious about the full story, methods, and results, you can open the complete report via the cover image below.
-    """
         )
-    
-        st.divider()
-    
-        # --- Layout: Left = clickable frontpage, Right = short context + link button ---
-        left, right = st.columns([1, 1.2], gap="large")
-    
-        with left:
-            # Use your existing helper if you have it; otherwise, replace with Path("frontpage.jpg")
-            frontpage_path = _find_file("frontpage.jpg") if "_find_file" in globals() else Path("frontpage.jpg")
-            front_uri = _img_to_data_uri(frontpage_path)
-    
-            st.markdown(
-                f"""
-                <a href="{REPORT_URL}" target="_blank" style="text-decoration:none;">
-                    <img src="{front_uri}" style="width:100%; border-radius:14px; box-shadow:0 10px 25px rgba(0,0,0,0.12);" />
-                </a>
-                <div style="font-size:0.9rem; color:#666; margin-top:0.5rem;">
-                    Click the cover to open the full report.
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-    
-        with right:
-            st.subheader("Selected visuals")
-            st.markdown(
-                """
-    These figures summarise the core idea: understanding **where tourism pressure concentrates**, how it **shifts over time**, 
-    and how a **DeTourism strategy** can redirect flows while strengthening urban liveability.
-    """
-            )
-            # Streamlit-native link button (nice UX). If your Streamlit version doesn't support it,
-            # you can replace this with st.markdown(f"[Open thesis report]({REPORT_URL})").
-            try:
-                st.link_button("Open thesis report", REPORT_URL, use_container_width=True)
-            except Exception:
-                st.markdown(f"[Open thesis report]({REPORT_URL})")
-    
-        st.divider()
-    
-        # --- Image grid ---
-        img1, img2 = st.columns(2, gap="large")
-        img3, _ = st.columns([1, 1], gap="large")
-    
-        analyses_path = _find_file("analyses.png") if "_find_file" in globals() else Path("analyses.png")
-        vision_path = _find_file("vision map.png") if "_find_file" in globals() else Path("vision map.png")
-        park_path = _find_file("park.png") if "_find_file" in globals() else Path("park.png")
-    
-        with img1:
-            st.image(analyses_path, caption="Analyses – spatial-temporal patterns & pressure indicators", use_container_width=True)
-    
-        with img2:
-            st.image(vision_path, caption="Vision map – DeTourism corridor concept", use_container_width=True)
-    
-        with img3:
-            st.image(park_path, caption="Public space & experience – example intervention logic", use_container_width=True)
 
+    st.divider()
+
+    c1, c2 = st.columns(2, gap="large")
+    c3, _ = st.columns([1, 1], gap="large")
+
+    analyses_path = _find_file("analyses.png") if "_find_file" in globals() else Path("analyses.png")
+    vision_path = _find_file("vision map.png") if "_find_file" in globals() else Path("vision map.png")
+    park_path = _find_file("park.png") if "_find_file" in globals() else Path("park.png")
+
+    with c1:
+        st.image(analyses_path, caption="Analyses – spatial-temporal patterns & pressure indicators", use_container_width=True)
+    with c2:
+        st.image(vision_path, caption="Vision map – DeTourism corridor concept", use_container_width=True)
+    with c3:
+        st.image(park_path, caption="Public space & experience – example intervention logic", use_container_width=True)
 
 def page_about():
     st.title("About / Contact")
