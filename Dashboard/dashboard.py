@@ -750,11 +750,54 @@ def page_carrying_capacity():
 
 
 def page_detourism():
+    def _find_asset(filename: str) -> Path:
+        """
+        Finds an asset in a few common locations.
+        Adjust folders if your images live somewhere else.
+        """
+        base = Path(__file__).resolve().parent
+    
+        candidates = [
+            base / filename,
+            base.parent / filename,
+    
+            base / "images" / filename,
+            base.parent / "images" / filename,
+    
+            base / "assets" / filename,
+            base.parent / "assets" / filename,
+    
+            base / "figures" / filename,
+            base.parent / "figures" / filename,
+        ]
+    
+        for p in candidates:
+            if p.exists():
+                return p
+    
+        # Helpful debug (shows where we looked)
+        raise FileNotFoundError(
+            f"Could not find '{filename}'. Looked in:\n" + "\n".join(str(c) for c in candidates)
+        )
+    
+    def _image_bytes(filename: str) -> bytes:
+        """
+        Reads image bytes so st.image() doesn't need to open a file path.
+        """
+        path = _find_asset(filename)
+        try:
+            return path.read_bytes()
+        except Exception as e:
+            st.error(f"Found '{filename}' at {path}, but couldn't read it: {e}")
+            raise
+            
     st.title("DeTourism")
 
     st.markdown(
-        """A small selection of visuals from my thesis **DeTourism**.
-        Open the full report via the link below."""
+        """
+A small selection of visuals from my thesis **DeTourism**.
+Click the button below the cover to open the full report.
+"""
     )
 
     st.divider()
@@ -762,10 +805,8 @@ def page_detourism():
     left, right = st.columns([1, 1.2], gap="large")
 
     with left:
-        frontpage_path = _find_file("frontpage.jpg") if "_find_file" in globals() else Path("frontpage.jpg")
-        st.image(frontpage_path, use_container_width=True)
+        st.image(_image_bytes("frontpage.jpg"), use_container_width=True)
 
-        # Nice clickable element (no base64)
         try:
             st.link_button("Open thesis report", REPORT_URL, use_container_width=True)
         except Exception:
@@ -774,9 +815,10 @@ def page_detourism():
     with right:
         st.subheader("Selected visuals")
         st.markdown(
-            """These figures summarise the core idea: where tourism pressure concentrates, how it shifts over time, 
-            and how a DeTourism strategy can redirect flows while supporting urban liveability.
             """
+These figures summarise the core idea: where tourism pressure concentrates, how it shifts over time,
+and how a DeTourism strategy can redirect flows while supporting urban liveability.
+"""
         )
 
     st.divider()
@@ -784,16 +826,20 @@ def page_detourism():
     c1, c2 = st.columns(2, gap="large")
     c3, _ = st.columns([1, 1], gap="large")
 
-    analyses_path = _find_file("analyses.png") if "_find_file" in globals() else Path("analyses.png")
-    vision_path = _find_file("vision map.png") if "_find_file" in globals() else Path("vision map.png")
-    park_path = _find_file("park.png") if "_find_file" in globals() else Path("park.png")
-
     with c1:
-        st.image(analyses_path, caption="Analyses – spatial-temporal patterns & pressure indicators", use_container_width=True)
+        st.image(_image_bytes("analyses.png"),
+                 caption="Analyses – spatial-temporal patterns & pressure indicators",
+                 use_container_width=True)
+
     with c2:
-        st.image(vision_path, caption="Vision map – DeTourism corridor concept", use_container_width=True)
+        st.image(_image_bytes("vision map.png"),
+                 caption="Vision map – DeTourism corridor concept",
+                 use_container_width=True)
+
     with c3:
-        st.image(park_path, caption="Public space & experience – example intervention logic", use_container_width=True)
+        st.image(_image_bytes("park.png"),
+                 caption="Public space & experience – example intervention logic",
+                 use_container_width=True)
 
 def page_about():
     st.title("About / Contact")
