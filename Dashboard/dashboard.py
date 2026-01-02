@@ -658,7 +658,6 @@ def page_tourism_dynamics():
 
 def page_carrying_capacity():
     st.title("Carrying Capacity")
-    """)
     st.markdown("""
     **What it’s about**  
     Assessing how spatial network capacity and land‐use form modify liveability under tourism pressure.
