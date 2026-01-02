@@ -150,9 +150,11 @@ def page_home():
     
     st.markdown("""
     **Introduction**  
-    Amsterdam is facing increasing pressure from overtourism. With a growing global middle class and low-cost travel options, more people than ever are visiting the city.  
-    While tourism brings economic benefits, it also causes serious strain on local life—leading to overcrowded streets, rising nuisance, and an erosion of social cohesion. Despite efforts like crowd control and earlier closing times, the city continues to address only the symptoms, not the deeper causes.
-    """)
+    Tourism is an essential part of Amsterdam’s economy and identity, but in recent years it has also become a growing source of pressure on everyday urban life. 
+    Crowded streets, rising nuisance, and uneven spatial use reveal that overtourism is not just a question of how many visitors the city receives, 
+    but where and when they concentrate.This dashboard accompanies my MSc thesis (TU Delft, 2025) and explores overtourism as a spatial–temporal urban system. 
+    By combining digital traces of tourist activity with urban and network characteristics, the project aims to better understand how tourism pressure unfolds 
+    across the city and how it might be redistributed more intelligently.""")
     
     # Resolve path to image
     base = Path(__file__).resolve().parent
@@ -164,18 +166,15 @@ def page_home():
         st.warning("Image not found: SCWX2243.jpeg")
 
     st.markdown("""
-    **How to Explore Tourist Pressure**
-    
-    Use the panel on the left to filter and the map/time‐series on the right will update instantly:
-    
-    - **Categories**  
-      Toggle one or more attraction types (e.g. Dining, Activities, Shops) to focus on specific flows.
-    
-    - **Day & Hour**  
-      Pick a day of the week and hour of the day to see when and where pressure peaks.
-    
-    The **Tourist Pressure Map** renders a real‐time heatmap of aggregated “pressure” values at each location.  
-    Below, **Pressure Over Time** shows the average pressure across your selected categories for every timestamp—so you can spot daily or weekly rhythms.
+    The map below visualizes tourist pressure across Amsterdam at specific moments in time. It is constructed using publicly available data sources such as 
+    Google Reviews and Popular Times, which act as proxies for where tourist activity is likely to concentrate. Each point represents a location associated 
+    with visitor activity. The intensity of the heatmap reflects the relative level of pressure at that location for the selected day, hour, and activity category. 
+    By adjusting the filters, you can explore how pressure shifts:
+    between weekdays and weekends,
+    across different times of day,
+    and between different types of places (e.g. dining, culture, nightlife).
+    Rather than treating tourism as a static total number, this approach reveals tourism as a dynamic pattern moving through the city, highlighting both 
+    persistent hotspots and moments of peak intensity.
     """)
 
 
@@ -301,11 +300,10 @@ def page_home():
             st.warning("Image not found: dining cafes.png")
 
     st.markdown("""
-    **Why This Dashboard**  
-    This dashboard transforms publicly available data—like Google reviews and Popular Times—into spatial and temporal insights. It allows us to see tourism not as a static number, but as a dynamic system unfolding through the city’s streets and neighborhoods.  
-
-    Use the tabs in the top left corner to explore the chapters and see where and when pressure is most intense, how the urban environment shapes this impact, and what strategies can help reimagine tourism for a more livable Amsterdam.
-    """)
+    **Dashboard**  
+    Use the navigation (top left) to explore how and where pressure becomes most intense, how urban structure relates to these patterns, 
+    and how alternative spatial strategies can contribute to a more balanced and livable Amsterdam. This dashboard gives a glimpse of the thesis, 
+    to see the full project go to the link on DeTourism page!""")
     base = Path(__file__).resolve().parent
     image_path = base / "public transport corridor.png"
 
