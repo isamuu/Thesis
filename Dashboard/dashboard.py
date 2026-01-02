@@ -751,10 +751,6 @@ def page_carrying_capacity():
 
 def page_detourism():
     def _find_asset(filename: str) -> Path:
-        """
-        Finds an asset in a few common locations.
-        Adjust folders if your images live somewhere else.
-        """
         base = Path(__file__).resolve().parent
     
         candidates = [
@@ -775,7 +771,7 @@ def page_detourism():
             if p.exists():
                 return p
     
-        # Helpful debug (shows where we looked)
+        # Helpful debug (shows where looked)
         raise FileNotFoundError(
             f"Could not find '{filename}'. Looked in:\n" + "\n".join(str(c) for c in candidates)
         )
@@ -817,8 +813,7 @@ Click the button below the cover to open the full report.
         st.subheader("Selected visuals")
         st.markdown(
             """
-These figures summarise the core idea: where tourism pressure concentrates, how it shifts over time,
-and how a DeTourism strategy can redirect flows while supporting urban liveability.
+The visual below give an impression of the report.
 """
         )
 
@@ -829,17 +824,17 @@ and how a DeTourism strategy can redirect flows while supporting urban liveabili
 
     with c1:
         st.image(_image_bytes("analyses.png"),
-                 caption="Analyses – spatial-temporal patterns & pressure indicators",
+                 caption="Analyses – spatial-temporal patterns & pressure/capacity indicators",
                  use_container_width=True)
 
     with c2:
         st.image(_image_bytes("vision map.png"),
-                 caption="Vision map – DeTourism corridor concept",
+                 caption="Vision map – DeTourism corridor strategy",
                  use_container_width=True)
 
     with c3:
         st.image(_image_bytes("park.png"),
-                 caption="Public space & experience – example intervention logic",
+                 caption="History & experience – example of possible strategic intervention",
                  use_container_width=True)
 
 def page_about():
