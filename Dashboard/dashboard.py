@@ -790,7 +790,8 @@ def page_detourism():
         except Exception as e:
             st.error(f"Found '{filename}' at {path}, but couldn't read it: {e}")
             raise
-            
+
+    REPORT_URL = "https://repository.tudelft.nl/file/File_6c37c232-04ab-4e5a-9ccf-766005dcf32b?preview=1"
     st.title("DeTourism")
 
     st.markdown(
