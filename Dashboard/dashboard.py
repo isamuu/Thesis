@@ -234,42 +234,49 @@ def page_home():
             st.info("No data for that time/category combination.")
 
     # — Full-width time series below —
-    st.subheader("Pressure composition (by category)")
+    st.subheader("Pressure Over Time (with composition)")
     
     ts_data = data[data["category"].isin(selected_cats)].copy()
     ts_data["datetime"] = pd.to_datetime(ts_data["datetime"], errors="coerce")
     
+    # Mean pressure per category per timestamp
     by_cat = (
         ts_data.groupby(["datetime", "category"], as_index=False)["pressure"]
         .mean()
     )
     
-    stacked = (
-        alt.Chart(by_cat)
-        .mark_area()
-        .encode(
-            x=alt.X(
-                "datetime:T",
-                title="Day of week",
-                axis=alt.Axis(format="%a", tickCount=7)
-            ),
-            y=alt.Y(
-                "pressure:Q",
-                stack="normalize",                 # <-- key: keeps y in [0,1]
-                title="Share of pressure (0–1)",
-                scale=alt.Scale(domain=[0, 1])
-            ),
-            color=alt.Color("category:N", title="Category"),
-            tooltip=[
-                alt.Tooltip("datetime:T", title="Time"),
-                alt.Tooltip("category:N", title="Category"),
-                alt.Tooltip("pressure:Q", title="Pressure", format=".2f"),
-            ],
-        )
-        .properties(height=280)
+    # Total pressure per timestamp (sum of category means)
+    total = (
+        by_cat.groupby("datetime", as_index=False)["pressure"]
+        .sum()
+        .rename(columns={"pressure": "total_pressure"})
     )
     
-    st.altair_chart(stacked, use_container_width=True)
+    base = alt.Chart(by_cat).encode(
+        x=alt.X("datetime:T", title="Day of week", axis=alt.Axis(format="%a", tickCount=7))
+    )
+    
+    area = base.mark_area().encode(
+        y=alt.Y("pressure:Q", title="Pressure (0–1)", scale=alt.Scale(domain=[0, 1])),
+        color=alt.Color("category:N", title="Category"),
+        tooltip=[
+            alt.Tooltip("datetime:T", title="Time"),
+            alt.Tooltip("category:N", title="Category"),
+            alt.Tooltip("pressure:Q", title="Category pressure", format=".2f"),
+        ],
+    )
+    
+    line = alt.Chart(total).mark_line(strokeWidth=2).encode(
+        x="datetime:T",
+        y=alt.Y("total_pressure:Q", scale=alt.Scale(domain=[0, 1])),
+        tooltip=[
+            alt.Tooltip("datetime:T", title="Time"),
+            alt.Tooltip("total_pressure:Q", title="Total pressure", format=".2f"),
+        ],
+    )
+    
+    chart = (area + line).properties(height=300).interactive()
+    st.altair_chart(chart, use_container_width=True)
 
 
 
