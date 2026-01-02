@@ -697,7 +697,6 @@ def page_carrying_capacity():
         """
     This page explores **carrying capacity**: the extent to which different parts of Amsterdam can accommodate tourist
     activity without creating excessive pressure on everyday urban life.
-    
     Rather than focusing on where tourists currently concentrate, this analysis looks at **where tourism could be
     absorbed**, based on urban structure, accessibility, and the spatial context of hotels.
         """.strip()
