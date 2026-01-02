@@ -734,7 +734,7 @@ and potential pressure across the city.
 
     st.markdown(
     """
-The variables available in the dropdown can be grouped into four main categories. Each group highlights a different
+The variables available in the dropdown can be grouped into three main categories. Each group highlights a different
 aspect of urban capacity around hotels.
     """.strip()
 )
