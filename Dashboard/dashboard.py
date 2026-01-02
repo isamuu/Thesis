@@ -693,7 +693,7 @@ def page_tourism_dynamics():
 def page_carrying_capacity():
     st.title("Carrying Capacity — Urban Capacity Around Hotels")
 
-st.markdown(
+    st.markdown(
     """
 This page explores **carrying capacity**: the extent to which different parts of Amsterdam can accommodate tourist
 activity without creating excessive pressure on everyday urban life.
@@ -701,21 +701,21 @@ activity without creating excessive pressure on everyday urban life.
 Rather than focusing on where tourists currently concentrate, this analysis looks at **where tourism could be
 absorbed**, based on urban structure, accessibility, and the spatial context of hotels.
     """.strip()
-)
+    )
 
-st.markdown(
+    st.markdown(
     """
 All indicators shown here are derived from **hotel locations in the city** and their surrounding urban environment.
 Hotels are used as anchoring points because they represent key entry points into the tourism system and strongly
 influence how visitors move, cluster, and spread through urban space.
     """.strip()
-)
+    )
 
-st.markdown("---")
+    st.markdown("---")
 
-st.subheader("How the Map Works")
+    st.subheader("How the Map Works")
 
-st.markdown(
+    st.markdown(
     """
 The map displays **neighbourhood-level values**, calculated by aggregating hotel-based indicators to the neighbourhood
 (Buurt) scale.
@@ -727,21 +727,21 @@ The map displays **neighbourhood-level values**, calculated by aggregating hotel
 The goal is not to label areas as *“good”* or *“bad”*, but to compare **spatial patterns of capacity, accessibility,
 and potential pressure** across the city.
     """.strip()
-)
+    )
 
-st.markdown("---")
+    st.markdown("---")
 
-st.subheader("Understanding the Variables")
+    st.subheader("Understanding the Variables")
 
-st.markdown(
+    st.markdown(
     """
 The variables available in the dropdown can be grouped into four main categories. Each group highlights a different
 aspect of urban capacity around hotels.
     """.strip()
 )
 
-with st.expander("1. Accessibility & Network Centrality (Angular Choice)"):
-    st.markdown(
+    with st.expander("1. Accessibility & Network Centrality (Angular Choice)"):
+        st.markdown(
         """
 **Variables**
 - 5min % high A.C.
@@ -759,10 +759,10 @@ The different time thresholds represent different spatial scales:
 - **15 minutes:** district-scale movement
 - **25 minutes:** city-wide connectivity
         """.strip()
-    )
+                    )
 
-with st.expander("2. Tourist Pressure Around Hotels"):
-    st.markdown(
+    with st.expander("2. Tourist Pressure Around Hotels"):
+        st.markdown(
         """
 **Variables**
 - pressure 5min
@@ -777,10 +777,10 @@ activity is in the surroundings of hotel locations.
 
 Together, they show how pressure **accumulates and scales spatially** around hotels.
         """.strip()
-    )
+            )
 
-with st.expander("3. Category-Based Indicators"):
-    st.markdown(
+    with st.expander("3. Category-Based Indicators"):
+        st.markdown(
         """
 **Variables**
 - 5min / 15min / 25min % high A.C. Category
@@ -795,8 +795,8 @@ neighbourhoods are structurally better suited for specific forms of tourism.
         """.strip()
     )
 
-with st.expander("4. Coverage & Reach of Tourist Activity"):
-    st.markdown(
+    with st.expander("4. Coverage & Reach of Tourist Activity"):
+        st.markdown(
         """
 **Variables**
 - total_points
@@ -814,9 +814,9 @@ hotels.
         """.strip()
     )
 
-st.markdown("---")
+    st.markdown("---")
 
-st.markdown(
+    st.markdown(
     """
 **How to use this page**
 
@@ -826,7 +826,7 @@ explore where the urban structure suggests **latent capacity** for tourism.
 Rather than prescribing solutions, this analysis provides the **spatial evidence** needed to reason about where tourism
 might be redistributed more sustainably — a logic that is further developed in the *DeTour* section.
     """.strip()
-)
+        )
 
 
 
