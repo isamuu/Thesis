@@ -691,16 +691,134 @@ def page_tourism_dynamics():
             st.image(buf, caption="Edge-bundled flows", use_container_width=True)
 
 def page_carrying_capacity():
-    st.title("Carrying Capacity")
-    st.markdown("""
-    **What it’s about**  
-    Assessing how spatial network capacity and land‐use form modify liveability under tourism pressure.
+    st.title("Carrying Capacity — Urban Capacity Around Hotels")
+    
+    st.markdown(
+        """
+    This page explores **carrying capacity**: the extent to which different parts of the city can absorb tourist activity 
+    without creating excessive pressure on everyday urban life.
+    
+    Rather than focusing on where tourists *are*, this analysis looks at **where tourism could be accommodated**, based on
+    urban structure, accessibility, and existing hotel locations.
+        """.strip()
+    )
+    
+    st.markdown(
+        """
+    All indicators shown here are derived from **hotel locations in Amsterdam** and their surrounding urban context.
+    Hotels are used as anchoring points because they represent key entry points into the city’s tourism system and strongly
+    shape how visitors move, concentrate, and spread through urban space.
+        """.strip()
+    )
+    
+    st.markdown("---")
+    
+    st.subheader("How the Map Works")
+    st.markdown(
+        """
+    The map displays **neighbourhood-level values**, calculated by aggregating hotel-based indicators to the neighbourhood
+    (Buurt) scale.
+    
+    - Use the dropdown menu to switch between variables.
+    - Each map shows the **relative spatial distribution** of the selected indicator.
+    - Darker colours indicate higher values.
+    - Hover over a neighbourhood to inspect exact values.
+    
+    The goal is not to label areas as “good” or “bad”, but to compare **spatial patterns of capacity, accessibility, and
+    potential pressure** across the city.
+        """.strip()
+    )
+    
+    st.markdown("---")
+    
+    st.subheader("Understanding the Variables")
+    
+    with st.expander("1. Accessibility & Network Centrality (Angular Choice)"):
+        st.markdown(
+            """
+    **Variables**
+    - 5min % high A.C.
+    - 15min % high A.C.
+    - 25min % high A.C.
+    
+    These indicators show the **share of highly central streets** (Angular Choice) within a travel-time catchment around
+    hotels.
+    
+    Angular Choice is a Space Syntax measure that approximates how likely a street is to be used as part of movement through
+    the city. Higher values suggest **better network connectivity and accessibility**.
+    
+    The different time thresholds reflect different spatial scales:
+    - **5 minutes:** very local accessibility
+    - **15 minutes:** district-scale movement
+    - **25 minutes:** city-wide connectivity
+            """.strip()
+        )
+    
+    with st.expander("2. Tourist Pressure Around Hotels"):
+        st.markdown(
+            """
+    **Variables**
+    - pressure 5min
+    - pressure 15min
+    - pressure 25min
+    
+    These variables represent aggregated **tourist pressure signals** within increasing travel-time catchments around hotels.
+    
+    They are derived from publicly available digital traces of tourist activity and indicate how intense tourism-related
+    activity is in the surroundings of hotel locations.
+    
+    Together, they show how pressure **scales up spatially** as the area around hotels increases.
+            """.strip()
+        )
+    
+    with st.expander("3. Category-Based Indicators"):
+        st.markdown(
+            """
+    **Variables**
+    - 5min / 15min / 25min % high A.C. Category
+    - pressure 5min / 15min / 25min Category
+    - Combined Category 5min / 15min / 25min
+    
+    These indicators repeat the accessibility and pressure measures, but **segmented by activity type**
+    (e.g. dining, culture, nightlife).
+    
+    They reveal how different types of tourist activities rely on different spatial structures, and whether certain
+    neighbourhoods are structurally better suited for specific kinds of tourism.
+            """.strip()
+        )
+    
+    with st.expander("4. Coverage & Reach of Tourist Activity"):
+        st.markdown(
+            """
+    **Variables**
+    - total_points
+    - within_5min / within_15min / within_25min
+    - percent_within_5min / percent_within_15min / percent_within_25min
+    
+    These variables describe **how much tourist activity falls within hotel catchments**.
+    
+    - `within_*` counts how many activity points fall inside a given travel-time range.
+    - `percent_within_*` expresses this as a share of all points.
+    - `total_points` shows the total number of activity points associated with a neighbourhood.
+    
+    They help contextualize accessibility and pressure by showing **how concentrated or dispersed activity is** around hotels.
+            """.strip()
+        )
+    
+    st.markdown("---")
+    
+    st.markdown(
+        """
+    **How to use this page**
+    
+    Use this page to compare different spatial scales, identify areas with **high accessibility but lower pressure**, and
+    explore where the urban structure suggests **latent capacity** for tourism.
+    
+    Rather than prescribing solutions, this analysis provides the **spatial evidence** needed to reason about where tourism
+    might be redistributed more sustainably — a logic that is further developed in the *DeTour* section.
+        """.strip()
+    )
 
-    **Analysis performed**  
-    - Space Syntax Angular Choice  
-    - Floor Space Index (FSI), Ground Space Index (GSI), Mixed‐Use Index (MXI)  
-    - Moderation analysis: tourist pressure → perceived nuisance, moderated by private/pedestrian/built space  
-    """)
 
     # 1) Load & parse geometry
     csv_path = Path(__file__).resolve().parent / "hotels_all_data.csv"
