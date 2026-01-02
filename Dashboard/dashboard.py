@@ -748,7 +748,7 @@ def page_carrying_capacity():
     # 5) Display
     st_folium(m, width=900, height=600)
 
-def page_finding_detour():
+def page_detourism():
     st.title("Finding a DeTour")
     st.title("Coming Soon 🚧")
     st.markdown("""
@@ -766,10 +766,10 @@ def page_about():
 # ——— Navigation ———
 pages = {
     "Home": page_home,
-    "Analysis: Overtourism": page_overtourism,
-    "Analysis: Tourism Dynamics": page_tourism_dynamics,
-    "Analysis: Carrying Capacity": page_carrying_capacity,
-    "Finding a DeTour": page_finding_detour,
+    "Overtourism": page_overtourism,
+    "Tourist Flows": page_tourism_dynamics,
+    "Carrying Capacity": page_carrying_capacity,
+    "DeTourism": page_detourism,
     "About / Contact": page_about
 }
 
