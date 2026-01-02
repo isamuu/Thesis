@@ -282,22 +282,6 @@ def page_home():
 
     
 
-        # Create two columns
-    col1, col2 = st.columns([1.5, 1])  # Adjust width ratio as needed
-
-    with col1:
-        st.markdown("""
-        **Understanding the Problem**  
-        The current strategies lack a systemic view. Overtourism is not just about too many tourists—it's about when and where they move, how the urban fabric absorbs them, and what social thresholds are crossed. Cities like Amsterdam need to move beyond reactive measures and embrace complexity.
-        """)
-
-    with col2:
-        base = Path(__file__).resolve().parent
-        image_path = base / "dining cafes.png"
-        if image_path.exists():
-            st.image(Image.open(image_path), use_container_width=True)
-        else:
-            st.warning("Image not found: dining cafes.png")
 
     st.markdown("""
     **Dashboard**  
@@ -554,7 +538,26 @@ def page_overtourism():
 
 def page_tourism_dynamics():
     st.title("Tourist flows")
-    
+            # Create two columns
+    col1, col2 = st.columns([1.5, 1])  # Adjust width ratio as needed
+
+    with col1:
+        st.markdown("""
+        **Understanding the Problem**  
+        The current strategies lack a systemic view. Overtourism is not just about too many tourists, it's about when and where they move, 
+        how the urban fabric absorbs them, and what social thresholds are crossed. While tourist pressure shows where activity concentrates, 
+        this page focuses on how tourists move through the city. Using an edge-bundling technique, the visualization below aggregates thousands of individual movement paths into a coherent flow structure.
+        Instead of showing every route separately, edge bundling reveals the dominant corridors that tourists repeatedly use to travel between places. This makes it possible to see how tourism relies on specific direction and how pressure is distributed along the urban network rather than confined to isolated hotspots.
+        The result is a structural view of tourism flows: where movement converges, which routes act as key connectors, and where alternative paths could help redistribute activity.
+        """)
+
+    with col2:
+        base = Path(__file__).resolve().parent
+        image_path = base / "dining cafes.png"
+        if image_path.exists():
+            st.image(Image.open(image_path), use_container_width=True)
+        else:
+            st.warning("Image not found: dining cafes.png")
     
 
     def create_animation(gdf: gpd.GeoDataFrame, fps: int = 10) -> bytes:
