@@ -555,7 +555,7 @@ def page_overtourism():
                     st.write(f"- {s}")
 
 def page_tourism_dynamics():
-    st.title("Tourism Dynamics")
+    st.title("Tourist flows")
     
     
 
