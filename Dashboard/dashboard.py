@@ -695,20 +695,16 @@ def page_carrying_capacity():
     
     st.markdown(
         """
-    This page explores **carrying capacity**: the extent to which different parts of the city can absorb tourist activity 
-    without creating excessive pressure on everyday urban life.
-    
-    Rather than focusing on where tourists *are*, this analysis looks at **where tourism could be accommodated**, based on
-    urban structure, accessibility, and existing hotel locations.
-        """.strip()
-    )
+        This page explores carrying capacity: the extent to which different parts of the city can absorb tourist activity 
+        without creating excessive pressure on everyday urban life. Rather than focusing on where tourists are, this analysis looks at where tourism could be accommodated, 
+        based on urban structure, accessibility, and existing hotel locations.
+        """)
     
     st.markdown(
         """
-    All indicators shown here are derived from **hotel locations in Amsterdam** and their surrounding urban context.
-    Hotels are used as anchoring points because they represent key entry points into the city’s tourism system and strongly
-    shape how visitors move, concentrate, and spread through urban space.
-        """.strip()
+        All indicators shown here are derived from hotel locations in Amsterdam and their surrounding urban context.
+        Hotels are used as anchoring points because they represent key entry points into the city’s tourism system and strongly
+        shape how visitors move, concentrate, and spread through urban space."""
     )
     
     st.markdown("---")
@@ -716,16 +712,14 @@ def page_carrying_capacity():
     st.subheader("How the Map Works")
     st.markdown(
         """
-    The map displays **neighbourhood-level values**, calculated by aggregating hotel-based indicators to the neighbourhood
-    (Buurt) scale.
+    The map displays values that show characteristics of the surrounding areas of hotels.
     
     - Use the dropdown menu to switch between variables.
-    - Each map shows the **relative spatial distribution** of the selected indicator.
-    - Darker colours indicate higher values.
-    - Hover over a neighbourhood to inspect exact values.
+    - Red colour indicates higher value, Green lower.
+    - Click on a dot to see the specific value of a location.
     
-    The goal is not to label areas as “good” or “bad”, but to compare **spatial patterns of capacity, accessibility, and
-    potential pressure** across the city.
+    The goal is not to label areas as “good” or “bad”, but to compare spatial patterns of capacity, accessibility, and
+    potential pressure across the city.
         """.strip()
     )
     
@@ -741,11 +735,9 @@ def page_carrying_capacity():
     - 15min % high A.C.
     - 25min % high A.C.
     
-    These indicators show the **share of highly central streets** (Angular Choice) within a travel-time catchment around
-    hotels.
-    
-    Angular Choice is a Space Syntax measure that approximates how likely a street is to be used as part of movement through
-    the city. Higher values suggest **better network connectivity and accessibility**.
+        These indicators show the share of highly central streets (Angular Choice) within a travel-time catchment around hotels.
+        Angular Choice is a Space Syntax measure that approximates how likely a street is to be used as part of movement through
+        the city. Higher values suggest better network connectivity and accessibility.
     
     The different time thresholds reflect different spatial scales:
     - **5 minutes:** very local accessibility
