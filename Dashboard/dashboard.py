@@ -234,16 +234,42 @@ def page_home():
             st.info("No data for that time/category combination.")
 
     # — Full-width time series below —
-    st.subheader("Pressure Over Time")
-    ts_data = data[data['category'].isin(selected_cats)]
-    pressure_ts = (
-        ts_data
-        .groupby('datetime')['pressure']
+    st.subheader("Pressure composition (by category)")
+    
+    ts_data = data[data["category"].isin(selected_cats)].copy()
+    ts_data["datetime"] = pd.to_datetime(ts_data["datetime"], errors="coerce")
+    
+    by_cat = (
+        ts_data.groupby(["datetime", "category"], as_index=False)["pressure"]
         .mean()
-        .reset_index()
-        .set_index('datetime')
     )
-    st.line_chart(pressure_ts)
+    
+    stacked = (
+        alt.Chart(by_cat)
+        .mark_area()
+        .encode(
+            x=alt.X(
+                "datetime:T",
+                title="Day of week",
+                axis=alt.Axis(format="%a", tickCount=7)
+            ),
+            y=alt.Y(
+                "pressure:Q",
+                stack="normalize",                 # <-- key: keeps y in [0,1]
+                title="Share of pressure (0–1)",
+                scale=alt.Scale(domain=[0, 1])
+            ),
+            color=alt.Color("category:N", title="Category"),
+            tooltip=[
+                alt.Tooltip("datetime:T", title="Time"),
+                alt.Tooltip("category:N", title="Category"),
+                alt.Tooltip("pressure:Q", title="Pressure", format=".2f"),
+            ],
+        )
+        .properties(height=280)
+    )
+    
+    st.altair_chart(stacked, use_container_width=True)
 
 
 
