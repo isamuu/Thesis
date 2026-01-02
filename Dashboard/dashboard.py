@@ -842,7 +842,8 @@ def page_about():
     st.title("About / Contact")
     st.markdown("""
     **Isamu Goiati**  
-    MSc Urban Planning & Design student at TU Delft  
+    Urban Designer and Data Scientist   
+    https://www.linkedin.com/in/isamu-goiati/  
     """)
 
 # ——— Navigation ———
