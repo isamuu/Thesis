@@ -257,7 +257,7 @@ def page_home():
     )
     
     area = base.mark_area().encode(
-        y=alt.Y("pressure:Q", title="Pressure (0–1)", scale=alt.Scale(domain=[0, 1])),
+        y=alt.Y("pressure:Q", title="Pressure", scale=alt.Scale(domain=[0, 13.5])),
         color=alt.Color("category:N", title="Category"),
         tooltip=[
             alt.Tooltip("datetime:T", title="Time"),
