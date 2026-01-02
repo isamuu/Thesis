@@ -718,11 +718,9 @@ def page_carrying_capacity():
         """
     The map displays **neighbourhood-level values**, calculated by aggregating hotel-based indicators to the neighbourhood
     (Buurt) scale.
-    
     - Use the dropdown menu to switch between different variables.
     - Darker colours indicate higher values for the selected indicator.
     - Hover over a neighbourhood to see the exact value.
-    
     The goal is not to label areas as *“good”* or *“bad”*, but to compare **spatial patterns of capacity, accessibility,
     and potential pressure** across the city.
         """.strip()
@@ -767,13 +765,10 @@ def page_carrying_capacity():
     - pressure 5min
     - pressure 15min
     - pressure 25min
-    
     These variables represent aggregated **tourist pressure signals** within increasing travel-time catchments around
     hotels.
-    
     They are derived from publicly available digital traces of tourist activity and indicate how intense tourism-related
     activity is in the surroundings of hotel locations.
-    
     Together, they show how pressure **accumulates and scales spatially** around hotels.
             """.strip()
         )
