@@ -713,7 +713,7 @@ def page_carrying_capacity():
 
     # 3) Choose variable to visualize
     numeric_cols = gdf.select_dtypes(include='number').columns.tolist()
-    show_cols = [col for col in numeric_cols if col not in ['lat', 'lon'] and gdf[col].nunique() > 5]
+    show_cols = [col for col in numeric_cols if col not in ['lat', 'lon', 'Unnamed: 0'] and gdf[col].nunique() > 5]
 
     if not show_cols:
         st.warning("No suitable numeric columns available for visualization.")
